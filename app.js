@@ -6,7 +6,7 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const pageTitles = {
   home:'首页', train:'训练', plan:'计划', me:'我的', wardrobe:'换装衣橱', shop:'道具商城',
   badges:'成就勋章', bag:'我的装备', records:'运动记录', growth:'成长旅程', settings:'设置',
-  course:'训练准备', workout:'训练中', result:'训练结果',
+  course:'训练准备', workout:'训练中', result:'训练结果', cycling:'骑行训练',
 };
 const poses = { home:0, wardrobe:0 };
 const preloaded = new Set();
@@ -14,6 +14,7 @@ const ui = {
   trainingFilter:'全部', wardrobeFilter:'全部', shopFilter:'全部', cart:new Set(), exchangeReceipt:null,
   planDate:today(), previewOutfit:'sport', growthStage:null,
   playing:false, starting:'', pace:1, angle:'front', mirror:false, breakdown:false, frame:0,
+  coachMode:'3d', mascotMove:'idle', mascotPlaying:!reducedMotion.matches, cyclingPlaying:!reducedMotion.matches,
   metronome:false, camera:null, cameraPending:false, cameraRequest:0,
 };
 let state = readState();
@@ -87,7 +88,7 @@ function seedState() {
     name:'瑞昂的小队员', xp:1280, coins:1280, vitality:520, goal:3, exchanges:0,
     outfit:'sport', avatar:'lion', accessory:'', owned:['sport','running','casual'],
     items:{fruit:2,bottle:1,wristband:1}, history, checkins, badges:[],
-    voice:false, reminders:true,
+    voice:false, reminders:true, mascot3d:false,
     plans:[
       {id:'welcome-wake',date,time:'07:30',course:'wake'},
       {id:'welcome-stretch',date,time:'18:30',course:'stretch'},
@@ -242,6 +243,7 @@ function earningsText(earned) {
 }
 
 function tabFor(page) {
+  if (page === 'cycling') return 'train';
   if (['course','workout','result'].includes(page)) return 'train';
   if (['wardrobe','shop'].includes(page)) return 'home';
   if (['bag','badges','records','growth','settings'].includes(page)) return 'me';
@@ -314,7 +316,7 @@ function onRouteChange(initial = false) {
     tickMark = performance.now();
   }
   route = next;
-  document.title = (route.page === 'home' ? '' : pageTitles[route.page]+' · ')+'瑞昂运动';
+  document.title = (route.page === 'home' ? '' : pageTitles[route.page]+' · ')+'瑞昂';
   render(sameCalendar);
   if (!initial && !sameCalendar) {
     window.scrollTo(0,0);
@@ -323,6 +325,8 @@ function onRouteChange(initial = false) {
 }
 
 function render(restoreFocus = true) {
+  const priorVideo = app.querySelector('[data-demo-video]');
+  const videoPosition = priorVideo && {src:priorVideo.getAttribute('src'),time:priorVideo.currentTime};
   const previousRail = app.querySelector('.outfit-grid');
   const outfitOffset = previousRail?.scrollLeft;
   const previousMotion = reducedMotion.matches ? null : captureMotionState();
@@ -332,6 +336,7 @@ function render(restoreFocus = true) {
   let page;
   switch (route.page) {
     case 'train': page = trainView(); break;
+    case 'cycling': page = cyclingView(); break;
     case 'plan': page = planView(); break;
     case 'me': page = meView(); break;
     case 'wardrobe': page = wardrobeView(); break;
@@ -346,7 +351,10 @@ function render(restoreFocus = true) {
     case 'result': page = resultView(state.history.find(log => log.id === route.id)); break;
     default: page = homeView();
   }
+  window.RuiangMotion?.clear();
   app.innerHTML = shell(page);
+  mountMotion(app);
+  syncDemoVideos(videoPosition);
   const outfitRail = app.querySelector('.outfit-grid');
   if (outfitRail && previousRail?.dataset.filter === outfitRail.dataset.filter) {
     outfitRail.scrollLeft = outfitOffset;
@@ -487,6 +495,102 @@ function openSheet(title, content, meta = {}) {
     <button class="icon-button" type="button" data-action="close-sheet" aria-label="关闭">${icon('close',21)}</button></header>${content}</div>`;
   if (!sheet.open) sheet.showModal();
   else sheet.querySelector('[data-action="close-sheet"]').focus({preventScroll:true});
+  mountMotion(sheet);
+}
+
+function mountMotion(container) {
+  for (const host of container.querySelectorAll('[data-model]')) {
+    const active = host.closest('.coach-stage') && activeWorkout();
+    host.dataset.modelKey = active ? active.session.id+':'+active.session.step+':'+host.dataset.model : [host.dataset.model,host.dataset.level,host.dataset.move,container === sheet ? 'sheet' : route.page].join(':');
+  }
+  window.RuiangMotion?.mount(container,host => {
+    if (host.closest('.coach-stage')) {
+      const active = activeWorkout();
+      return {
+        playing:ui.playing && !ui.breakdown,
+        speed:ui.pace*(active?.exercise.cadence || 78)/78,
+        move:active?.exercise.modelMove,
+        angle:ui.angle,
+        frame:ui.breakdown ? ui.frame/Math.max(1,active.exercise.steps.length-1)*2.4 : undefined,
+      };
+    }
+    return {
+      playing:host.closest('.cycling-demo') ? ui.cyclingPlaying : ui.mascotPlaying,
+      speed:1,
+      move:host.dataset.move === 'cycle' ? 'cycle' : ui.mascotMove,
+    };
+  });
+}
+
+function syncDemoVideos(previous) {
+  for (const video of app.querySelectorAll('[data-demo-video]')) {
+    if (previous?.src === video.getAttribute('src')) {
+      video.addEventListener('loadedmetadata',() => { video.currentTime = Math.min(previous.time,video.duration || previous.time); },{once:true});
+    }
+    video.playbackRate = ui.pace;
+    if (ui.playing && !ui.breakdown) void video.play().catch(() => {});
+    else video.pause();
+  }
+}
+
+function setMascotMotion(move) {
+  if (!['idle','wave','jump','cheer'].includes(move)) return;
+  ui.mascotMove = move;
+  ui.mascotPlaying = true;
+  render();
+}
+
+function growthModelSheet(level) {
+  const stage = STAGES.find(stage => stage.level === Number(level));
+  if (!stage) return;
+  ui.mascotMove = 'wave';
+  ui.mascotPlaying = true;
+  openSheet(stage.name+' · 3D 互动',`${modelMarkup('mascot','wave',stage.level,'sheet-model')}<p class="model-instruction">左右拖动旋转，点按下方动作与瑞昂互动。</p><div class="model-actions">${['wave','jump','cheer'].map((move,index) => `<button class="button button-outline" data-action="sheet-motion" data-value="${move}">${['挥挥手','跳一跳','庆祝'][index]}</button>`).join('')}</div>`);
+}
+
+function mascotVideoSheet() {
+  const riding = state.avatar === 'animation';
+  const filename = riding ? 'ruiang-cycle' : 'ruiang-wave';
+  openSheet(riding ? '瑞昂 · 骑行' : '瑞昂 · 挥手互动',`<video class="sheet-video" src="${ASSETS}motion/${filename}.mp4" controls muted autoplay playsinline loop aria-label="瑞昂的三维动作视频"></video>`);
+}
+
+function rewardSheet() {
+  const total = state.history.reduce((sum,entry) => sum+(entry.coins || 0),0);
+  openSheet('训练奖励',`<div class="reward-explainer">${namedIcon('coin','gold',30)}<h3>跟练越久，收获越多</h3><p>每完成 30 秒有效动作，获得 5 训练币与 10 成长经验。课程结束后，奖励存入你的账户。</p><p>休息和暂停时间不计入有效时长，每节课按课程动作总时长计算上限。</p><div class="earned-total"><span>累计训练获得</span><strong>${formatNumber(total)} 训练币</strong></div><a class="button button-primary" href="#train">开始训练 ${icon('arrow',18)}</a></div>`);
+}
+
+function cyclingPlanSheet(id) {
+  const template = CYCLING_PLANS.find(plan => plan.id === id);
+  if (!template) return;
+  const start = addDays(today(),1);
+  openSheet(template.name,`<form data-form="cycling-plan" class="sheet-form"><p class="sheet-hint">${template.description}</p><div class="paired-fields"><label class="field"><span>开始日期</span><input name="date" type="date" min="${today()}" value="${start}" required></label><label class="field"><span>训练时间</span><input name="time" type="time" value="18:30" required></label></div><ul class="cycling-plan-preview">${template.sessions.map(([id,offset]) => `<li><span>第 ${offset+1} 天</span><strong>${courseById(id).name}</strong><small>${courseMinutes(courseById(id))} 分钟</small></li>`).join('')}</ul><p id="cycling-plan-error" class="field-error" role="alert" hidden></p><div class="sheet-actions"><button class="button button-outline" type="button" data-action="close-sheet">取消</button><button class="button button-primary" type="submit">加入日历</button></div></form>`,{cyclingPlan:id});
+}
+
+function cyclingPlanSave(form) {
+  const template = CYCLING_PLANS.find(plan => plan.id === dialogData.cyclingPlan);
+  const values = new FormData(form);
+  const start = values.get('date');
+  const time = values.get('time');
+  if (!template || !isDateKey(start) || start < today() || !/^\d{2}:\d{2}$/.test(time || '')) return;
+  if (state.plans.some(plan => plan.template === template.id && plan.blockStart === start)) {
+    sheet.close();
+    go('plan',start);
+    showToast('这份计划已在日历中');
+    return;
+  }
+  const proposals = template.sessions.map(([course,offset]) => ({id:freshId('ride-plan'),date:addDays(start,offset),time,course,template:template.id,blockStart:start}));
+  const conflict = proposals.find(plan => planConflict(plan.date,time,courseById(plan.course)));
+  if (conflict) {
+    const error = form.querySelector('#cycling-plan-error');
+    error.textContent = monthDay(conflict.date)+' '+time+' 已有训练安排，请调整开始日期或训练时间。';
+    error.hidden = false;
+    return;
+  }
+  state.plans.push(...proposals);
+  save();
+  sheet.close();
+  go('plan',start);
+  showToast('已加入 3 次骑行安排');
 }
 
 function cartItems() {
@@ -682,7 +786,7 @@ function notificationsSheet() {
 }
 
 function guideSheet() {
-  openSheet('欢迎加入瑞昂运动',`<div class="guide-content">${img('ruiang-box.png','瑞昂在练习拳击')}<p>选一节课开始运动。每次训练都能获得经验和训练币，解锁瑞昂的新服装。</p></div>
+  openSheet('欢迎加入瑞昂',`<div class="guide-content">${img('ruiang-box.png','瑞昂在练习拳击')}<p>选一节课开始运动。每次训练都能获得经验和训练币，解锁瑞昂的新服装。</p></div>
     <div class="sheet-actions"><button class="button button-outline" data-action="close-sheet">关闭</button><a class="button button-primary" href="#train">选择课程 ${icon('arrow',17)}</a></div>`);
 }
 
@@ -811,6 +915,8 @@ function updateTimer(course,session,exercise) {
     const src = ASSETS+'coach-'+name+'.jpg';
     if (picture.getAttribute('src') !== src) picture.src = src;
   }
+  const coins = document.querySelector('[data-live-coins]');
+  if (coins) coins.textContent = '+'+trainingRewards(session.seconds,course).coins;
 }
 
 function enterExercise(course,session,index) {
@@ -831,10 +937,12 @@ function nextMove() {
   } else if (session.step+1 === course.exercises.length) {
     finishWorkout(course,session);
     return;
+  } else if (courseRestSeconds(course) === 0) {
+    enterExercise(course,session,session.step+1);
   } else {
     stopCamera();
     session.rest = true;
-    session.remaining = REST_SECONDS;
+    session.remaining = courseRestSeconds(course);
     speak('组间休息，喝口水。');
   }
   tickMark = performance.now();
@@ -852,16 +960,21 @@ function previousMove() {
 }
 
 function finishWorkout(course,session) {
-  if (state.history.some(entry => entry.id === session.id)) return;
+  state = readState();
+  if (state.history.some(entry => entry.id === session.id)) {
+    go('result',session.id,{replace:true});
+    return;
+  }
   ui.playing = false;
   stopCamera();
   const old = levelInfo().level;
-  const multiplier = ({拉伸:3,居家:5,力量:6,HIIT:8})[course.group] || 5;
+  const multiplier = ({拉伸:3,居家:5,力量:6,HIIT:8,骑行:6})[course.group] || 5;
+  const reward = trainingRewards(session.seconds,course);
   registerDay();
-  state.xp += 25;
-  state.coins += 15;
+  state.xp += reward.xp;
+  state.coins += reward.coins;
   state.vitality += 5;
-  const log = {id:session.id,course:course.id,date:today(),seconds:session.seconds,calories:Math.round(session.seconds*multiplier/60),xp:25,coins:15,streak:currentStreak()};
+  const log = {id:session.id,course:course.id,date:today(),seconds:session.seconds,calories:Math.round(session.seconds*multiplier/60),xp:reward.xp,coins:reward.coins,streak:currentStreak()};
   const current = levelInfo();
   if (current.level > old) {
     log.levelUp = current.level;
@@ -877,7 +990,7 @@ function finishWorkout(course,session) {
   const earned = unlockBadges();
   save();
   go('result',log.id,{replace:true});
-  showToast(['经验 +25','训练币 +15',earningsText(earned),log.levelUp ? '升级至 Lv.'+log.levelUp : ''].filter(Boolean).join(' · '));
+  showToast(['经验 +'+reward.xp,'训练币 +'+reward.coins,earningsText(earned),log.levelUp ? '升级至 Lv.'+log.levelUp : ''].filter(Boolean).join(' · '));
 }
 
 function pulse() {
@@ -931,10 +1044,21 @@ function selectGrowthStage(level) {
 }
 
 const actions = {
+  'mascot-render': () => { state.mascot3d = !state.mascot3d; update(); },
+  'mascot-motion': (_,value) => setMascotMotion(value),
+  'mascot-video': mascotVideoSheet,
+  'mascot-pause': () => { ui.mascotPlaying = !ui.mascotPlaying; render(); },
+  'sheet-motion': (_,value) => { ui.mascotMove = value; ui.mascotPlaying = true; },
+  'cycling-play': () => { ui.cyclingPlaying = !ui.cyclingPlaying; render(); },
+  'cycling-plan': cyclingPlanSheet,
+  'growth-model': growthModelSheet,
+  'reward-rules': rewardSheet,
+  'coach-mode': (_,value) => { if (['3d','video','photo'].includes(value)) { ui.coachMode = value; render(); } },
   'avatar': avatarSheet,
   'select-avatar': id => {
     if (!MASCOT_VIEWS.some(avatar => avatar.id === id)) return;
     state.avatar = id;
+    state.mascot3d = id === 'animation';
     poses.home = 0;
     sheet.close();
     update();
@@ -954,6 +1078,7 @@ const actions = {
     if (!state.owned.includes(id)) return;
     state.outfit = id;
     state.avatar = 'lion';
+    state.mascot3d = false;
     poses.home = 0;
     update('已穿戴 · '+outfitById(id).name);
   },
@@ -1056,6 +1181,8 @@ document.addEventListener('submit',event => {
   event.preventDefault();
   if (form.dataset.form === 'plan') {
     planSave(form);
+  } else if (form.dataset.form === 'cycling-plan') {
+    cyclingPlanSave(form);
   } else if (form.dataset.form === 'goal') {
     state.goal = Number(new FormData(form).get('goal'));
     sheet.close();
@@ -1142,6 +1269,10 @@ document.addEventListener('visibilitychange',() => {
     save();
     render(false);
   }
+});
+sheet.addEventListener('close',() => {
+  for (const video of sheet.querySelectorAll('video')) video.pause();
+  window.RuiangMotion?.release(sheet);
 });
 window.addEventListener('hashchange',() => onRouteChange());
 window.addEventListener('pagehide',() => { stopCamera(); save(); });

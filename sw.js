@@ -1,6 +1,6 @@
 const scope = new URL(self.registration.scope);
 const cachePrefix = 'ruiang-mobile:'+scope.href+':';
-const cacheName = cachePrefix+'v2';
+const cacheName = cachePrefix+'v3';
 const outfitNames = ['sport','running','badminton','basketball','football','yoga','tang','hanfu','casual','festive'];
 const propNames = ['coin','fruit','bottle','bell','headband','wristband','ribbon','gift'];
 const images = [
@@ -11,7 +11,12 @@ const images = [
   ...['m','f'].flatMap(coach => Array.from({length:8},(_,index) => 'coach-'+coach+(index+1)+'.jpg')),
 ];
 const appFiles = [
-  'index.html','app.css','content.js','views.js','app.js','app.webmanifest',
+  'index.html','app.css','content.js','views.js','app.js','motion3d.js','app.webmanifest',
+  'assets/vendor/three-runtime.js','assets/growth-stages.jpg',
+  ...['ruiang-stage-1','ruiang-stage-5','ruiang-stage-8','ruiang-stage-12','ruiang-stage-16','coach-male','coach-female','ruiang-bike']
+    .map(name => 'assets/models/'+name+'.glb'),
+  ...['male-march','male-squat','male-shot','male-cycle','female-pushup','female-dog','female-neck','female-shoulder','ruiang-wave','ruiang-cycle']
+    .map(name => 'assets/motion/'+name+'.mp4'),
   ...images.map(name => 'assets/'+name),
 ];
 const appUrls = new Set(appFiles.map(file => new URL(file,scope).href));
@@ -19,9 +24,11 @@ const indexUrl = new URL('index.html',scope);
 
 self.addEventListener('install',event => {
   // Install a complete version before serving any of its files.
-  event.waitUntil(caches.open(cacheName).then(cache =>
-    cache.addAll([...appUrls].map(url => new Request(url,{cache:'reload'})))
-  ));
+  event.waitUntil((async () => {
+    const cache = await caches.open(cacheName);
+    await cache.addAll([...appUrls].map(url => new Request(url,{cache:'reload'})));
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate',event => {
@@ -42,6 +49,29 @@ self.addEventListener('fetch',event => {
   if (!appEntry && !appUrls.has(url.href)) return;
   event.respondWith((async () => {
     const cache = await caches.open(cacheName);
-    return await cache.match(appEntry ? indexUrl.href : request) || fetch(request);
+    const response = await cache.match(appEntry ? indexUrl.href : request);
+    const range = request.headers.get('Range');
+    if (!response || !range) return response || fetch(request);
+    return rangeResponse(response,range);
   })());
 });
+
+async function rangeResponse(response,range) {
+  const content = await response.blob();
+  const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+  if (!match || !match[1] && !match[2]) return response;
+  const start = match[1] ? Number(match[1]) : Math.max(0,content.size-Number(match[2]));
+  const end = match[1] && match[2] ? Math.min(Number(match[2]),content.size-1) : content.size-1;
+  if (start > end || start >= content.size) {
+    return new Response(null,{status:416,headers:{'Content-Range':'bytes */'+content.size}});
+  }
+  return new Response(content.slice(start,end+1),{
+    status:206,
+    headers:{
+      'Content-Type':response.headers.get('Content-Type') || 'video/mp4',
+      'Accept-Ranges':'bytes',
+      'Content-Range':`bytes ${start}-${end}/${content.size}`,
+      'Content-Length':String(end-start+1),
+    },
+  });
+}

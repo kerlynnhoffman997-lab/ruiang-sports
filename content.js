@@ -29,12 +29,28 @@ const CATALOG = [
 
 const MASCOT_VIEWS = [
   { id: 'lion', name: 'Q 版醒狮', description: '养成、换装与陪伴', image: 'ruiang-face.png' },
-  { id: 'animation', name: '瑞昂骑行', description: '原始素材中的骑行形象', image: 'ruiang-bike.png' },
+  { id: 'animation', name: '瑞昂骑行', description: '陪你一起热身、踩踏和放松', image: 'ruiang-bike.png' },
 ];
 
 const COACH_NAMES = { male: '写实男教练', female: '写实女教练' };
 
 const MOVES = {
+  rideWarm: {
+    name:'骑行热身', modelMove:'cycle', cadence:65, front:['m5'], side:['m6'],
+    steps:['先把坐垫调到适合自己的高度，佩戴并扣好头盔。','轻阻力开始，双肩放松，双手轻握车把。','轻松踩踏，保持能说完整句子的强度。'],
+  },
+  rideEasy: {
+    name:'坐姿平稳骑行', modelMove:'cycle', cadence:75, front:['m5'], side:['m6'],
+    steps:['目光向前，背部保持自然，肘部略微弯曲。','膝盖跟随脚尖方向，骨盆保持平稳。','平顺地踩过整圈，使用能稳定控制的阻力。'],
+  },
+  rideCadence: {
+    name:'踏频节奏练习', modelMove:'cycle', cadence:85, front:['m5'], side:['m6'],
+    steps:['先稳定坐姿，再小幅提高踏频。','保持轻松、可对话的强度，避免憋气。','坐垫上出现弹跳时，降低踏频并重新稳住动作。'],
+  },
+  rideCool: {
+    name:'轻松收尾骑行', modelMove:'cycle', cadence:60, front:['m5'], side:['m6'],
+    steps:['逐渐降低阻力和踏频，让呼吸慢慢平稳。','保持轻松踩踏，让身体平缓结束运动。','完全停稳后再下车，补充饮水。'],
+  },
   march: {
     name: '原地踏步', front: ['m5'], side: ['m6'],
     steps: ['抬头站直，双臂随踏步自然摆动。', '交替抬膝，脚掌轻落地。'],
@@ -96,14 +112,37 @@ const COURSES = [
     description: '从站姿到持球，跟着教练练习投篮起手。',
     exercises: [['squat', 40, '屈膝预备'], ['shot', 45], ['shot', 45, '重复起手练习'], ['shoulder', 30]],
   },
+  {
+    id:'ride-start',name:'骑行入门 · 找到节奏',group:'骑行',color:'mint',icon:'bike',
+    difficulty:'初级',equipment:'自行车 / 健身车',cover:'ruiang-bike.png',coach:'male',
+    description:'先用轻阻力熟悉坐姿和踩踏，再完成一段平稳骑行。适合健身车或安全封闭场地。',
+    exercises:[['rideWarm',180],['rideEasy',360],['rideCool',180]],
+  },
+  {
+    id:'ride-rhythm',name:'骑行进阶 · 平顺踩踏',group:'骑行',color:'blue',icon:'bike',
+    difficulty:'初级',equipment:'自行车 / 健身车',cover:'ruiang-bike.png',coach:'male',
+    description:'从轻松骑行过渡到短段踏频练习，再回到舒适节奏。以动作稳定和自然呼吸为先。',
+    exercises:[['rideWarm',240],['rideEasy',240],['rideCadence',120],['rideEasy',240],['rideCool',240]],
+  },
+  {
+    id:'ride-endurance',name:'轻松有氧 · 骑行耐力',group:'骑行',color:'gold',icon:'bike',
+    difficulty:'基础进阶',equipment:'自行车 / 健身车',cover:'ruiang-bike.png',coach:'male',
+    description:'延长舒适骑行的时间，始终保持可以交谈的强度，练习稳定坐姿与均匀踩踏。',
+    exercises:[['rideWarm',300],['rideEasy',600],['rideCadence',180],['rideEasy',120],['rideCool',300]],
+  },
 ];
 
 const STAGES = [
-  { level: 1, name: '幼狮期', icon: 'lion', color: 'blue' },
-  { level: 5, name: '少年期', icon: 'bolt', color: 'peach' },
-  { level: 8, name: '战士期', icon: 'shield', color: 'mint' },
-  { level: 12, name: '冠军期', icon: 'award', color: 'rose' },
-  { level: 16, name: '传奇期', icon: 'spark', color: 'gold' },
+  { level:1,name:'幼狮期',icon:'lion',color:'blue',portrait:0,description:'小小的醒狮头套，陪你迈出第一步。' },
+  { level:5,name:'少年期',icon:'bolt',color:'peach',portrait:1,description:'完整醒狮头套与青绿宝石，每一次坚持都有回响。' },
+  { level:8,name:'战士期',icon:'shield',color:'mint',portrait:2,description:'换上金边红色战衣，迎接新的训练挑战。' },
+  { level:12,name:'冠军期',icon:'award',color:'rose',portrait:3,description:'金色肩扣、红色披风，记录一路积累的荣誉。' },
+  { level:16,name:'传奇期',icon:'spark',color:'gold',portrait:4,description:'金色头套与祥云战衣，见证持续成长的自己。' },
+];
+
+const CYCLING_PLANS = [
+  {id:'beginner',name:'起步一周',description:'3 次骑行，训练日之间安排恢复时间。',sessions:[['ride-start',0],['ride-start',2],['ride-rhythm',5]]},
+  {id:'steady',name:'平稳进阶',description:'从基础骑行到轻松有氧，逐步延长运动时间。',sessions:[['ride-start',0],['ride-rhythm',2],['ride-endurance',5]]},
 ];
 
 const LEVELS = [0, 250, 500, 750, 1_000, 2_000, 2_400, 2_900, 3_500, 4_200, 5_000, 6_000, 7_000, 8_500, 10_000, 12_000];
@@ -125,6 +164,8 @@ const BADGES = [
 ];
 
 const ICONS = {
+  bike: '<circle cx="5.5" cy="16.5" r="4"/><circle cx="18.5" cy="16.5" r="4"/><path d="m5.5 16.5 5-9 4 9h-9L13 10h4l1.5 6.5M9 7h4m3-3h3l1 3"/>',
+  cube: '<path d="m12 3 9 5v9l-9 5-9-5V8l9-5ZM3 8l9 5 9-5M12 13v9M7.5 5.5l9 5"/>',
   home: '<path d="m3 10 9-7 9 7v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 21v-7h6v7"/>',
   play: '<circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4z"/>',
   triangle: '<path d="M9 5.9a.8.8 0 0 1 1.2-.7l9 5.4a1.6 1.6 0 0 1 0 2.8l-9 5.4a.8.8 0 0 1-1.2-.7z" fill="currentColor" stroke="none"/>',
@@ -197,12 +238,36 @@ function outfitById(id) {
 function exerciseFor(course, index) {
   const [id, seconds, title] = course.exercises[index];
   const move = MOVES[id];
-  return { ...move, title: title || move.name, seconds, coach: (move.front || move.side)[0][0] === 'm' ? 'male' : 'female' };
+  return { ...move, id, modelMove:move.modelMove || id, title: title || move.name, seconds, coach: (move.front || move.side)[0][0] === 'm' ? 'male' : 'female' };
 }
 
 function courseSeconds(course) {
   const seconds = course.exercises.reduce((sum, [, amount]) => sum + amount, 0);
-  return seconds+(course.exercises.length-1)*REST_SECONDS;
+  return seconds+(course.exercises.length-1)*courseRestSeconds(course);
+}
+
+function courseRestSeconds(course) {
+  return course.group === '骑行' ? 0 : REST_SECONDS;
+}
+
+function trainingRewards(seconds,course) {
+  const maximum = course.exercises.reduce((sum,[,amount]) => sum+amount,0);
+  const active = Math.min(Math.max(0,Number(seconds) || 0),maximum);
+  const units = Math.floor(active/30);
+  return {coins:units*5,xp:units*10,seconds:active};
+}
+
+function expectedRewards(course) {
+  return trainingRewards(course.exercises.reduce((sum,[,seconds]) => sum+seconds,0),course);
+}
+
+function stagePortrait(stage,classes = '') {
+  return `<span class="stage-portrait ${classes}" role="img" aria-label="${esc(stage.name+'的瑞昂形象')}" style="--portrait:${stage.portrait}"></span>`;
+}
+
+function modelMarkup(model,move = 'idle',level = 5,classes = '') {
+  const poster = model === 'bike' ? 'ruiang-bike.png' : model === 'mascot' ? 'sport-0.png' : model === 'female' ? 'coach-f7.jpg' : 'coach-m5.jpg';
+  return `<div class="motion-stage ${classes}" data-model="${model}" data-move="${move}" data-level="${level}" tabindex="0" role="img" aria-label="可拖动旋转的${model === 'mascot' || model === 'bike' ? '瑞昂' : '教练'}三维动作模型"><canvas aria-hidden="true"></canvas>${img(poster,'模型加载中的角色预览','model-poster')}<span class="model-fallback">当前设备显示角色预览，可切换动作视频</span></div>`;
 }
 
 function courseMinutes(course) {

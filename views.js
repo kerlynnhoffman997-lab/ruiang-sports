@@ -85,6 +85,9 @@ function homeProgress() {
 }
 
 function spriteMarkup(outfit, context, avatar = 'lion') {
+  if (context === 'home' && state.mascot3d) {
+    return modelMarkup(avatar === 'animation' ? 'bike' : 'mascot',avatar === 'animation' ? 'cycle' : ui.mascotMove,levelInfo().stage.level,'home-model');
+  }
   const picked = MASCOT_VIEWS.find(option => option.id === avatar);
   const file = avatar === 'lion' ? outfit.id+'-0.png' : picked.image;
   return `<button type="button" class="sprite ${context === 'home' ? 'home-sprite' : 'wardrobe-sprite'}" data-sprite="${context}" data-outfit="${outfit.id}" data-avatar="${avatar}" aria-label="${avatar === 'lion' ? '拖动或按方向键旋转瑞昂，点按互动' : picked.name+'，点按互动'}">
@@ -117,12 +120,13 @@ function hero() {
       ${spriteMarkup(outfit,'home',state.avatar)}
       <span class="sprite-effects" aria-hidden="true"><i>✦</i><i>✧</i><i>♥</i><i>✦</i></span>
     </div>
-    ${state.avatar === 'lion' ? `<div class="turn-controls">
+    ${state.mascot3d ? '<div class="turn-controls model-turn-hint"><span>左右拖动 · 旋转查看</span></div>' : state.avatar === 'lion' ? `<div class="turn-controls">
       <button class="turn-button" data-action="turn" data-id="home" data-value="-1" aria-label="向左转">${icon('chevronLeft',15)}</button>
       <span>${icon('rotate',14)}拖动旋转 · 点击互动</span>
       <button class="turn-button" data-action="turn" data-id="home" data-value="1" aria-label="向右转">${icon('chevron',15)}</button>
     </div>` : ''}
-  </section>`;
+  </section>
+  <div class="companion-controls" aria-label="瑞昂动作控制"><button class="companion-mode" data-action="mascot-render">${icon(state.mascot3d ? 'layers' : 'cube',16)}${state.mascot3d ? '原作立绘' : '3D 互动'}</button>${state.mascot3d ? `${state.avatar === 'lion' ? ['wave','jump','cheer'].map((move,index) => `<button data-action="mascot-motion" data-value="${move}" class="${ui.mascotMove === move ? 'selected' : ''}">${['挥手','跳跃','庆祝'][index]}</button>`).join('') : '<a href="#cycling">骑行训练 '+icon('arrow',15)+'</a>'}<button class="companion-play" data-action="mascot-video" aria-label="播放瑞昂动作视频">${icon('camera',17)}</button><button class="companion-play" data-action="mascot-pause" aria-label="${ui.mascotPlaying ? '暂停角色动作' : '播放角色动作'}">${icon(ui.mascotPlaying ? 'pause' : 'triangle',17)}</button>` : '<span>点按瑞昂互动，左右拖动切换角度</span>'}</div>`;
 }
 
 function shortcutCards() {
@@ -150,8 +154,8 @@ function homeView() {
   const recommended = pending.length ? pending.slice(0,2).map(plan => courseCard(courseById(plan.course),{plan,compact:true})).join('')
     : [COURSES[0],COURSES[1]].map(course => courseCard(course,{compact:true})).join('');
   return `<div class="home-toolbar">
-    <div class="home-brand" aria-label="瑞昂运动">${img('app-icon.png','','brand-icon')}
-      <span>${img('wordmark.png','瑞昂','brand-wordmark')} <strong>运动</strong></span>
+    <div class="home-brand" aria-label="瑞昂">${img('app-icon.png','','brand-icon')}
+      <span>${img('wordmark.png','瑞昂','brand-wordmark')}</span>
     </div>
     <div class="page-tools">${coinPill()}<button class="icon-button top-message" data-action="notifications" aria-label="消息通知">${icon('bell',20)}</button></div>
   </div>
@@ -162,6 +166,7 @@ function homeView() {
   ${hero()}
   ${homeProgress()}
   ${shortcutCards()}
+  <a class="cycling-entry card" href="#cycling">${namedIcon('bike','mint')}<span><strong>和瑞昂一起骑行</strong><small>动态示范 · 动作规范 · 一周计划</small></span>${icon('chevron',18)}</a>
   <section class="home-training">
     <div class="section-heading"><h2>${pending.length ? '今日训练' : '推荐课程'}</h2><a class="text-link" href="#train">全部课程 ${icon('arrow',16)}</a></div>
     <div class="compact-grid">${recommended}</div>
@@ -182,9 +187,26 @@ function trainView() {
   const resumed = recentSessions()[0];
   const resumeCourse = courseById(resumed?.course);
   return `${pageHead('训练',{action:coinPill()})}
+  <button class="training-wallet card" data-action="reward-rules">${namedIcon('coin','gold')}<span><strong>动起来，赚训练币</strong><small>每有效跟练 30 秒，获得 5 训练币</small></span>${icon('help',18)}</button>
+  <a class="cycling-entry card" href="#cycling">${namedIcon('bike','mint')}<span><strong>骑行训练</strong><small>从坐姿到踩踏，找到你的节奏</small></span>${icon('chevron',18)}</a>
   ${resumed ? `<a class="resume-banner" href="${hashFor('course',resumed.course,{plan:resumed.plan,session:resumed.id})}">${namedIcon('play','gold')}<span><strong>继续上次训练</strong><small>${resumeCourse.name} · ${checkpointLabel(resumed,resumeCourse)}</small></span>${icon('arrow',20)}</a>` : ''}
-  ${filterBar(['全部','居家','拉伸','力量','HIIT'],ui.trainingFilter,'train-filter','课程分类')}
+  ${filterBar(['全部','居家','拉伸','力量','HIIT','骑行'],ui.trainingFilter,'train-filter','课程分类')}
   <div class="course-grid">${courses.map(course => courseCard(course)).join('')}</div>`;
+}
+
+function cyclingView() {
+  const courses = COURSES.filter(course => course.group === '骑行');
+  const cues = [
+    ['目光向前','头颈自然延伸，肩膀放松，肘部保留轻微弯曲。'],
+    ['骨盆稳定','坐稳车座，膝盖与脚尖同向，避免身体左右摇晃。'],
+    ['平顺踩踏','先用轻阻力，寻找舒适踏频。可从每分钟 70–90 转的范围中调整。'],
+    ['循序渐进','热身后再增加强度，最后用轻松踩踏收尾。全程保持自然呼吸。'],
+  ];
+  return `${pageHead('一起去骑行',{back:'train',action:coinPill()})}
+  <section class="card cycling-demo"><div class="cycling-demo-heading"><div><span class="text-tag tone-mint">动作示范</span><h2>找到舒服的骑行姿态</h2></div><button class="icon-button" data-action="cycling-play" aria-label="${ui.cyclingPlaying ? '暂停骑行示范' : '播放骑行示范'}">${icon(ui.cyclingPlaying ? 'pause' : 'triangle',22)}</button></div>${modelMarkup('male','cycle',5,'cycling-model')}<div class="cycling-demo-caption"><span>${icon('rotate',16)}左右拖动旋转</span><span>坐姿 · 平顺踩踏</span></div></section>
+  <section class="card cycling-technique"><div class="section-heading"><h2>骑行动作规范</h2></div><ol>${cues.map(([title,text],index) => `<li><b>${index+1}</b><div><h3>${title}</h3><p>${text}</p></div></li>`).join('')}</ol><p class="cycling-safety">适合健身车或安全封闭场地。户外骑行时，请先停稳再操作屏幕。</p><details class="cycling-sources"><summary>查看动作参考</summary><p><a href="https://www.britishcycling.org.uk/knowledge/skills/get-started/article/izn20180118-Get-Started-How-to-climb---10-top-tips-for-beginners-0" target="_blank" rel="noopener">British Cycling · 姿态与踩踏</a><a href="https://www.cyclinguk.org/article/campaigns-guide/cycling-tips-24-essential-pieces-riding-advice-beginners" target="_blank" rel="noopener">Cycling UK · 入门骑行</a></p></details></section>
+  <section><div class="section-heading"><h2>选择一次骑行</h2></div><div class="course-grid">${courses.map(course => courseCard(course)).join('')}</div></section>
+  <section class="cycling-plans"><div class="section-heading"><h2>把骑行放进生活</h2></div>${CYCLING_PLANS.map(plan => `<article class="card cycling-plan"><div><h3>${plan.name}</h3><p>${plan.description}</p></div><div class="cycling-days">${Array.from({length:7},(_,day) => `<span class="${plan.sessions.some(([,offset]) => offset === day) ? 'ride-day' : ''}">${plan.sessions.some(([,offset]) => offset === day) ? icon('bike',17) : '休息'}<small>第 ${day+1} 天</small></span>`).join('')}</div><button class="button button-primary" data-action="cycling-plan" data-id="${plan.id}">${icon('calendar',17)}加入一周计划</button></article>`).join('')}</section>`;
 }
 
 function preparationView(course) {
@@ -202,6 +224,7 @@ function preparationView(course) {
       <div class="prepare-copy">
         <span class="text-tag tone-${course.color}">${course.group}</span><h2>${course.name}</h2>
         <p>${course.description}</p>
+        <button class="course-reward" data-action="reward-rules">${icon('coin',17)}跟完整节可得 <strong>+${expectedRewards(course).coins} 训练币</strong>${icon('chevron',15)}</button>
         <div class="facts"><span>${icon('clock',16)}${courseMinutes(course)} 分钟</span><span>${icon('layers',16)}${course.exercises.length} 个动作</span><span>${icon('dumbbell',16)}${course.equipment}</span><span>${icon('activity',16)}${course.difficulty}</span></div>
         ${saved ? `<p class="inline-note">${icon('clock',19)} 已保存进度 · ${checkpointLabel(saved,course)}</p>` : ''}
         ${chosenPlan ? `<p class="inline-note plain">${icon('calendar',18)} 完成后计入 ${monthDay(chosenPlan.date)} ${chosenPlan.time} 的计划</p>` : ''}
@@ -462,18 +485,20 @@ function growthView() {
         const isCurrent = stage === current;
         const hasReached = stage.level <= level;
         return `<button id="stage-tab-${stage.level}" class="stage-step tone-${stage.color}${hasReached ? ' reached' : ''}${isCurrent ? ' current' : ''}" type="button" role="tab" aria-selected="${active}" aria-controls="stage-preview" tabindex="${active ? 0 : -1}" data-action="growth-stage" data-id="${stage.level}">
-          <span class="stage-medallion">${icon(stage.icon,22)}</span><strong>${stage.name}</strong><small>${isCurrent ? '当前阶段' : hasReached ? '已达成' : 'Lv.'+stage.level}</small>
+          <span class="stage-medallion">${stagePortrait(stage)}</span><strong>${stage.name}</strong><small>${isCurrent ? '当前阶段' : hasReached ? '已达成' : 'Lv.'+stage.level}</small>
         </button>`;
       }).join('')}
     </div>
   </section>
   <div class="growth-layout">
     <section id="stage-preview" class="growth-preview tone-${preview.color}" role="tabpanel" aria-labelledby="stage-tab-${preview.level}" tabindex="0" data-stage="${preview.level}">
-      <div class="growth-art">${img('sport-0.png','身穿原始红白运动套装的醒狮少年瑞昂','growth-portrait')}<span class="growth-art-badge" aria-hidden="true">${icon(preview.icon,29)}</span></div>
+      <div class="growth-art">${stagePortrait(preview,'growth-portrait')}<span class="growth-art-badge" aria-hidden="true">${icon(preview.icon,29)}</span></div>
       <div class="growth-copy">
         <span class="growth-state">${icon(preview === current ? 'spark' : locked ? 'lock' : 'check',15)}${preview === current ? '当前阶段 · Lv.'+level : locked ? '阶段预览' : '已解锁'}</span>
         <h2>${preview.name}</h2>
         <div class="growth-milestone">${milestone}</div>
+        <p class="growth-description">${preview.description}</p>
+        <button class="button button-outline compact" data-action="growth-model" data-id="${preview.level}">${icon('cube',16)}3D 查看</button>
       </div>
     </section>
     <aside class="growth-side">
@@ -542,14 +567,21 @@ function workoutView(course, session) {
   const currentAngle = ui.angle === 'side' ? Boolean(exercise.side) : !exercise.front;
   const coach = COACH_NAMES[exercise.coach];
   const finalMove = session.step+1 === course.exercises.length;
+  const cycling = course.group === '骑行';
+  const mode = cycling && ui.coachMode === 'photo' ? '3d' : ui.coachMode;
+  const demonstration = mode === '3d' ? modelMarkup(exercise.coach,exercise.modelMove,5,'coach-model')
+    : mode === 'video' ? `<video class="coach-demo-video" data-demo-video src="${ASSETS}motion/${exercise.coach}-${exercise.modelMove}.mp4" poster="${ASSETS}${cycling ? 'ruiang-bike.png' : 'coach-'+activePhoto+'.jpg'}" muted loop playsinline preload="metadata" aria-label="${exercise.name}的三维动作视频"></video>`
+    : `<img id="coach-frame" src="${ASSETS}coach-${activePhoto}.jpg" alt="${coach}的${exercise.name}分步图解">`;
   return `<header class="training-top">${back}<strong>${course.name}</strong><span>第 ${session.step+1} / ${course.exercises.length} 个动作</span></header>
   ${progressBar(completed/course.exercises.length*100,'red','课程进度')}
+  <div class="training-earnings"><span>${icon('coin',16)}本次累积 <b data-live-coins>+${trainingRewards(session.seconds,course).coins}</b> 训练币</span><button data-action="reward-rules">结算规则 ${icon('help',15)}</button></div>
   <div class="workout-grid">
     <section class="coach-card card">
+      <div class="coach-mode-switch" aria-label="示范形式">${[['3d','3D 跟练'],['video','动作视频'],...(!cycling ? [['photo','写实图解']] : [])].map(([id,label]) => `<button data-action="coach-mode" data-value="${id}" aria-pressed="${mode === id}" class="${mode === id ? 'selected' : ''}">${id === '3d' ? icon('cube',15) : id === 'video' ? icon('triangle',15) : icon('layers',15)}${label}</button>`).join('')}</div>
       <div class="coach-stage${ui.mirror ? ' mirrored' : ''}">
         <div class="coach-backdrop"></div>
-        <img id="coach-frame" src="${ASSETS}coach-${activePhoto}.jpg" alt="${coach}的${exercise.name}示范">
-        <span class="coach-label">${icon('camera',15)}${coach} · ${currentAngle ? '侧面' : '正面'}</span>
+        ${demonstration}
+        <span class="coach-label">${icon(mode === '3d' ? 'cube' : mode === 'video' ? 'triangle' : 'camera',15)}${mode === '3d' ? '3D 动作模型' : mode === 'video' ? '3D 动作视频' : coach+' · 分步图解'}${cycling ? ' · '+exercise.cadence+' RPM 示范' : ''}</span>
         <button class="camera-tile${ui.camera ? ' camera-live' : ''}" data-action="camera" aria-label="${ui.camera ? '关闭摄像头' : '开启摄像头'}">
           <video id="camera-video" muted autoplay playsinline></video>
           <span>${icon('camera',20)}<small>${ui.camera ? '关闭镜头' : ui.cameraPending ? '正在开启' : '镜头对照'}</small></span>
@@ -557,7 +589,7 @@ function workoutView(course, session) {
       </div>
       <div class="workout-tools">
         <button class="tool-button${ui.breakdown ? ' selected' : ''}" data-action="breakdown" aria-pressed="${ui.breakdown}">${icon('step',19)}${ui.breakdown ? '退出拆解' : '分步拆解'}</button>
-        <button class="tool-button" data-action="view-angle"${exercise.front && exercise.side ? '' : ' disabled'}>${icon('rotate',19)}视角切换</button>
+        <button class="tool-button" data-action="view-angle"${mode === '3d' || mode === 'photo' && exercise.front && exercise.side ? '' : ' disabled'}>${icon('rotate',19)}视角切换</button>
         <button class="tool-button${ui.mirror ? ' selected' : ''}" data-action="mirror" aria-pressed="${ui.mirror}">${icon('mirror',19)}镜像</button>
         <button class="tool-button speed-button" data-action="speed" aria-label="切换示范倍速，当前 ${pace} 倍"><b>${pace}×</b>倍速</button>
       </div>
@@ -595,6 +627,7 @@ function resultView(log) {
         <li>${namedIcon('coin','gold',18)}<span>训练币</span><b>+${log.coins}</b></li>
         <li>${namedIcon('flame','peach',18)}<span>连续打卡</span><b>${log.streak} 天</b></li>
       </ul>
+      ${!log.coins ? '<p class="result-reward-note">本次有效跟练不足 30 秒。完成动作后，可按实际跟练时长获得训练币。</p>' : `<p class="result-reward-note">${log.coins} 训练币已存入账户，可在商城兑换装备。</p>`}
       ${log.levelUp ? `<a class="result-growth" href="#growth">${namedIcon('spark','gold',18)}<span><strong>升级至 Lv.${log.levelUp}</strong>${log.stageUnlocked ? `<small>解锁${esc(log.stageUnlocked)}</small>` : ''}</span>${icon('chevron',17)}</a>` : ''}
       <div class="result-actions"><a class="button button-outline" href="${hashFor('plan',log.plannedDate || log.date)}">查看计划</a><a class="button button-primary" href="#home">完成 ${icon('check',18)}</a></div>
     </div>
