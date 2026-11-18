@@ -84,11 +84,9 @@ function homeProgress() {
   </div>`;
 }
 
-function spriteMarkup(outfit, context, avatar = 'lion') {
-  const picked = MASCOT_VIEWS.find(option => option.id === avatar);
-  const file = avatar === 'lion' ? outfit.id+'-0.png' : picked.image;
-  return `<button type="button" class="sprite ${context === 'home' ? 'home-sprite' : 'wardrobe-sprite'}" data-sprite="${context}" data-outfit="${outfit.id}" data-avatar="${avatar}" aria-label="${avatar === 'lion' ? '拖动或按方向键旋转瑞昂，点按互动' : picked.name+'，点按互动'}">
-    <span class="sprite-mover">${img(file,avatar === 'lion' ? '身穿'+outfit.name+'的醒狮少年瑞昂' : picked.name,'sprite-image')}</span>
+function spriteMarkup(outfit, context) {
+  return `<button type="button" class="sprite ${context === 'home' ? 'home-sprite' : 'wardrobe-sprite'}" data-sprite="${context}" data-outfit="${outfit.id}" aria-label="拖动或按方向键旋转瑞昂，点按互动">
+    <span class="sprite-mover">${img(outfit.id+'-0.png','身穿'+outfit.name+'的醒狮少年瑞昂','sprite-image')}</span>
   </button>`;
 }
 
@@ -99,7 +97,6 @@ function equippedAccessory() {
 
 function hero() {
   const outfit = outfitById(state.outfit);
-  const greeting = state.avatar === 'lion' ? '今天也要一起运动哦！' : '今天一起去骑行！';
   return `<section class="hero">
     <div class="hero-track" aria-hidden="true"><i></i><i></i><i></i></div>
     <div class="hero-spark one" aria-hidden="true">${icon('spark',26)}</div>
@@ -108,20 +105,19 @@ function hero() {
     <div class="hero-copy">
       <span class="hero-kicker">${icon('spark',15)}醒狮少年</span>
       <h2>我的瑞昂</h2>
-      <p id="hero-dialogue" class="speech">${greeting}</p>
-      <button class="button button-dark" data-action="avatar">${icon('switch',17)}切换形象</button>
-      ${state.avatar === 'lion' ? equippedAccessory() : ''}
+      <p id="hero-dialogue" class="speech">今天也要一起运动哦！</p>
+      ${equippedAccessory()}
     </div>
     <div class="hero-illustration">
       <span class="stage-shadow" aria-hidden="true"></span>
-      ${spriteMarkup(outfit,'home',state.avatar)}
+      ${spriteMarkup(outfit,'home')}
       <span class="sprite-effects" aria-hidden="true"><i>✦</i><i>✧</i><i>♥</i><i>✦</i></span>
     </div>
-    ${state.avatar === 'lion' ? `<div class="turn-controls">
+    <div class="turn-controls">
       <button class="turn-button" data-action="turn" data-id="home" data-value="-1" aria-label="向左转">${icon('chevronLeft',15)}</button>
       <span>${icon('rotate',14)}拖动旋转 · 点击互动</span>
       <button class="turn-button" data-action="turn" data-id="home" data-value="1" aria-label="向右转">${icon('chevron',15)}</button>
-    </div>` : ''}
+    </div>
   </section>`;
 }
 

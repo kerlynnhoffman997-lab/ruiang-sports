@@ -27,11 +27,6 @@ const CATALOG = [
   ...PROPS,
 ];
 
-const MASCOT_VIEWS = [
-  { id: 'lion', name: 'Q 版醒狮', description: '养成、换装与陪伴', image: 'ruiang-face.png' },
-  { id: 'animation', name: '瑞昂骑行', description: '原始素材中的骑行形象', image: 'ruiang-bike.png' },
-];
-
 const COACH_NAMES = { male: '写实男教练', female: '写实女教练' };
 
 const MOVES = {
@@ -147,7 +142,6 @@ const ICONS = {
   check: '<path d="m5 12 4 4L19 6"/>',
   close: '<path d="m6 6 12 12m0-12L6 18"/>',
   rotate: '<path d="M20 8a8 8 0 0 0-13-3L3 9m0-5v5h5m-4 7a8 8 0 0 0 13 3l4-4m0 5v-5h-5"/>',
-  switch: '<path d="M4 7h15l-4-4m5 14H5l4 4M20 7l-5 4M4 17l5-4"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   layers: '<path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/>',
   step: '<path d="M4 19h5v-5h5V9h6M4 5h6M4 9h3"/>',

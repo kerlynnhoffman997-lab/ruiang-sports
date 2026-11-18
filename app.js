@@ -85,7 +85,7 @@ function seedState() {
   }));
   return {
     name:'瑞昂的小队员', xp:1280, coins:1280, vitality:520, goal:3, exchanges:0,
-    outfit:'sport', avatar:'lion', accessory:'', owned:['sport','running','casual'],
+    outfit:'sport', accessory:'', owned:['sport','running','casual'],
     items:{fruit:2,bottle:1,wristband:1}, history, checkins, badges:[],
     voice:false, reminders:true,
     plans:[
@@ -105,8 +105,8 @@ function readState() {
     if (stored) {
       const saved = JSON.parse(stored);
       if (saved && typeof saved === 'object' && Array.isArray(saved.history) && Array.isArray(saved.plans)) {
-        const avatar = MASCOT_VIEWS.some(view => view.id === saved.avatar) ? saved.avatar : 'lion';
-        const restored = { ...seedState(), ...saved, avatar };
+        const restored = { ...seedState(), ...saved };
+        delete restored.avatar;
         restored.sessions = restoreSessions(restored);
         return restored;
       }
@@ -365,9 +365,7 @@ function render(restoreFocus = true) {
   if (previousMotion) animateComponentChanges(previousMotion);
   for (const sprite of app.querySelectorAll('[data-sprite]')) {
     turnSprite(sprite.dataset.sprite,0);
-    if (sprite.dataset.avatar === 'lion') {
-      for (const view of [1,2]) preload(ASSETS+sprite.dataset.outfit+'-'+view+'.png');
-    }
+    for (const view of [1,2]) preload(ASSETS+sprite.dataset.outfit+'-'+view+'.png');
   }
   const video = document.querySelector('#camera-video');
   if (video && ui.camera) video.srcObject = ui.camera;
@@ -442,7 +440,7 @@ function preload(url) {
 
 function turnSprite(context, delta) {
   const sprite = app.querySelector('[data-sprite="'+context+'"]');
-  if (!sprite || sprite.dataset.avatar !== 'lion') return;
+  if (!sprite) return;
   const angle = ((poses[context]+delta)%360+360)%360;
   poses[context] = angle;
   const quadrant = Math.round(angle/90)%4;
@@ -462,13 +460,9 @@ function animateSprite(sprite) {
   }
   if (sprite.dataset.sprite !== 'home') return;
   const speech = document.querySelector('#hero-dialogue');
-  if (sprite.dataset.avatar === 'lion') {
-    const phrases = ['加油！今天也要坚持哦','先热个身，再出发！','每次运动都算数！'];
-    ui.say = ((ui.say ?? -1)+1)%phrases.length;
-    speech.textContent = phrases[ui.say];
-  } else {
-    speech.textContent = '准备好，骑行出发！';
-  }
+  const phrases = ['加油！今天也要坚持哦','先热个身，再出发！','每次运动都算数！'];
+  ui.say = ((ui.say ?? -1)+1)%phrases.length;
+  speech.textContent = phrases[ui.say];
   const effects = app.querySelector('.sprite-effects');
   effects.classList.remove('pop');
   requestAnimationFrame(() => effects.classList.add('pop'));
@@ -517,13 +511,6 @@ function checkIn() {
   state.xp += 15;
   state.coins += 10;
   update('打卡成功 · 经验 +15 · 训练币 +10',old);
-}
-
-function avatarSheet() {
-  openSheet('切换形象',`<div class="avatar-options">${MASCOT_VIEWS.map(avatar => `
-    <button class="avatar-option${avatar.id === state.avatar ? ' selected' : ''}" data-action="select-avatar" data-id="${avatar.id}" aria-pressed="${avatar.id === state.avatar}">
-      ${img(avatar.image)}<span><strong>${avatar.name}</strong><small>${avatar.description}</small></span>${avatar.id === state.avatar ? icon('check',20) : icon('chevron',18)}
-    </button>`).join('')}</div><a class="text-link coach-sheet-link" href="#train">查看教练示范课程 ${icon('arrow',16)}</a>`);
 }
 
 function exchangeSheet() {
@@ -937,14 +924,6 @@ function selectGrowthStage(level) {
 }
 
 const actions = {
-  'avatar': avatarSheet,
-  'select-avatar': id => {
-    if (!MASCOT_VIEWS.some(avatar => avatar.id === id)) return;
-    state.avatar = id;
-    poses.home = 0;
-    sheet.close();
-    update();
-  },
   'close-sheet': () => sheet.close(),
   'check-in': checkIn,
   'growth-stage': id => selectGrowthStage(Number(id)),
@@ -959,7 +938,6 @@ const actions = {
   'wear': id => {
     if (!state.owned.includes(id)) return;
     state.outfit = id;
-    state.avatar = 'lion';
     poses.home = 0;
     update('已穿戴 · '+outfitById(id).name);
   },
@@ -997,7 +975,6 @@ const actions = {
     const item = productById(id);
     if (!item?.wearable || !(state.items[id] > 0)) return;
     state.accessory = state.accessory === id ? '' : id;
-    if (state.accessory) state.avatar = 'lion';
     update((state.accessory ? '已穿戴 · ' : '已取下 · ')+item.name);
   },
   'plan-day': (_,value) => go('plan',value,{replace:true}),
@@ -1099,7 +1076,7 @@ sheet.addEventListener('click',event => {
 });
 
 app.addEventListener('pointerdown',event => {
-  const target = event.target.closest('[data-sprite][data-avatar="lion"]');
+  const target = event.target.closest('[data-sprite]');
   if (!target || event.button !== 0) return;
   drag = {target,id:event.pointerId,start:event.clientX,x:event.clientX,moved:false};
   target.setPointerCapture(event.pointerId);
@@ -1135,7 +1112,7 @@ app.addEventListener('keydown',event => {
     document.getElementById('stage-tab-'+level)?.focus({preventScroll:true});
     return;
   }
-  const sprite = event.target.closest('[data-sprite][data-avatar="lion"]');
+  const sprite = event.target.closest('[data-sprite]');
   if (!sprite || !['ArrowLeft','ArrowRight'].includes(event.key)) return;
   event.preventDefault();
   turnSprite(sprite.dataset.sprite,event.key === 'ArrowLeft' ? -90 : 90);
