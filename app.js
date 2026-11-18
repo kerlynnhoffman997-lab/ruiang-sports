@@ -326,7 +326,10 @@ function onRouteChange(initial = false) {
 
 function render(restoreFocus = true) {
   const priorVideo = app.querySelector('[data-demo-video]');
-  const videoPosition = priorVideo && {src:priorVideo.getAttribute('src'),time:priorVideo.currentTime};
+  const priorModel = window.RuiangMotion?.stages.find(stage => stage.host.closest('.coach-stage'));
+  const videoPosition = priorVideo ? {node:priorVideo,src:priorVideo.getAttribute('src'),time:priorVideo.currentTime}
+    : priorModel && {modelMove:priorModel.move,time:priorModel.action?.time ?? priorModel.time};
+  const coachingDetailsOpen = app.querySelector('#coaching-details')?.open;
   const previousRail = app.querySelector('.outfit-grid');
   const outfitOffset = previousRail?.scrollLeft;
   const previousMotion = reducedMotion.matches ? null : captureMotionState();
@@ -351,10 +354,19 @@ function render(restoreFocus = true) {
     case 'result': page = resultView(state.history.find(log => log.id === route.id)); break;
     default: page = homeView();
   }
-  window.RuiangMotion?.clear();
+  const retainedModels = window.RuiangMotion?.detach(app) || [];
   app.innerHTML = shell(page);
-  mountMotion(app);
+  const newVideo = app.querySelector('[data-demo-video]');
+  if (priorVideo && newVideo?.getAttribute('src') === videoPosition.src) newVideo.replaceWith(priorVideo);
+  const modelHost = app.querySelector('.coach-model');
+  const current = modelHost && activeWorkout();
+  if (priorVideo && current && videoPosition.src === ASSETS+'motion/'+current.exercise.coach+'-'+current.exercise.modelMove+'.mp4') {
+    modelHost.dataset.startTime = String(videoPosition.time%(RuiangMotion.durations[current.exercise.modelMove] || 4.8));
+  }
+  mountMotion(app,retainedModels);
   syncDemoVideos(videoPosition);
+  const coachingDetails = app.querySelector('#coaching-details');
+  if (coachingDetails) coachingDetails.open = Boolean(coachingDetailsOpen);
   const outfitRail = app.querySelector('.outfit-grid');
   if (outfitRail && previousRail?.dataset.filter === outfitRail.dataset.filter) {
     outfitRail.scrollLeft = outfitOffset;
@@ -498,10 +510,10 @@ function openSheet(title, content, meta = {}) {
   mountMotion(sheet);
 }
 
-function mountMotion(container) {
+function mountMotion(container,retained = []) {
   for (const host of container.querySelectorAll('[data-model]')) {
     const active = host.closest('.coach-stage') && activeWorkout();
-    host.dataset.modelKey = active ? active.session.id+':'+active.session.step+':'+host.dataset.model : [host.dataset.model,host.dataset.level,host.dataset.move,container === sheet ? 'sheet' : route.page].join(':');
+    host.dataset.modelKey = active ? active.session.id+':'+host.dataset.model : [host.dataset.model,host.dataset.level,container === sheet ? 'sheet' : route.page].join(':');
   }
   window.RuiangMotion?.mount(container,host => {
     if (host.closest('.coach-stage')) {
@@ -511,7 +523,7 @@ function mountMotion(container) {
         speed:ui.pace*(active?.exercise.cadence || 78)/78,
         move:active?.exercise.modelMove,
         angle:ui.angle,
-        frame:ui.breakdown ? ui.frame/Math.max(1,active.exercise.steps.length-1)*2.4 : undefined,
+        frame:ui.breakdown ? ui.frame/Math.max(1,active.exercise.steps.length-1)*(RuiangMotion.durations[active.exercise.modelMove] || 4.8)*.88 : undefined,
       };
     }
     return {
@@ -519,15 +531,23 @@ function mountMotion(container) {
       speed:1,
       move:host.dataset.move === 'cycle' ? 'cycle' : ui.mascotMove,
     };
-  });
+  },retained);
 }
 
 function syncDemoVideos(previous) {
   for (const video of app.querySelectorAll('[data-demo-video]')) {
-    if (previous?.src === video.getAttribute('src')) {
-      video.addEventListener('loadedmetadata',() => { video.currentTime = Math.min(previous.time,video.duration || previous.time); },{once:true});
-    }
-    video.playbackRate = ui.pace;
+    const active = activeWorkout();
+    const duration = RuiangMotion.durations[active?.exercise.modelMove] || 4.8;
+    const position = () => {
+      let target;
+      if (ui.breakdown && active) target = ui.frame/Math.max(1,active.exercise.steps.length-1)*duration*.88;
+      else if (previous?.modelMove === active?.exercise.modelMove) target = previous.time%duration;
+      else if (previous?.node !== video && previous?.src === video.getAttribute('src')) target = previous.time;
+      if (Number.isFinite(target)) video.currentTime = Math.min(target,video.duration-.001);
+    };
+    if (video.readyState >= 1) position();
+    else video.addEventListener('loadedmetadata',position,{once:true});
+    video.playbackRate = ui.pace*(active?.exercise.cadence || 78)/78;
     if (ui.playing && !ui.breakdown) void video.play().catch(() => {});
     else video.pause();
   }
@@ -1271,7 +1291,12 @@ document.addEventListener('visibilitychange',() => {
   }
 });
 sheet.addEventListener('close',() => {
-  for (const video of sheet.querySelectorAll('video')) video.pause();
+  for (const video of sheet.querySelectorAll('video')) {
+    video.autoplay = false;
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+  }
   window.RuiangMotion?.release(sheet);
 });
 window.addEventListener('hashchange',() => onRouteChange());

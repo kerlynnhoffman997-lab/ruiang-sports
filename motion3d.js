@@ -3,6 +3,18 @@
   'use strict';
   const { THREE, GLTFExporter, GLTFLoader } = window.Ruiang3DEngine;
   const TAU = Math.PI * 2;
+  const MOTION_SECONDS = {idle:4.8,wave:3.2,jump:2.8,cheer:3.6,march:2.4,squat:4.8,pushup:4.8,dog:6.4,neck:8,shoulder:6,shot:3.6,cycle:60/78};
+
+  function ease(value) {
+    const x = THREE.MathUtils.clamp(value,0,1);
+    return x*x*x*(x*(x*6-15)+10);
+  }
+
+  function pulseWindow(value,start,end) {
+    if (value<=start || value>=end) return 0;
+    return Math.sin((value-start)/(end-start)*Math.PI)**2;
+  }
+
   const instances = new Set();
   const savedPositions = new Map();
   const colors = { white:0xfff9ee, red:0xe64536, gold:0xe0ac48, green:0x218e7e, skin:0xf0bf9e, ink:0x29201d };
@@ -45,101 +57,37 @@
       parent.add(mesh);
       return mesh;
     }
+    if (mascot) {
+      const rig = window.RuiangCharacter.build({root,joints,group,oval,material,kind,level,
+        makeBicycle:() => makeBicycle(group,oval,ring,material,true),
+      });
+      pose(rig,'idle',0);
+      return rig;
+    }
     const torso = group('Torso');
     const pelvis = group('Pelvis');
     const head = group('Head');
-    const shirt = mascot && level >= 8 && level < 12 ? colors.red : female ? colors.red : colors.white;
-    oval(torso,[0,0,0],mascot ? [.225,.23,.15] : [.225,.30,.135],shirt);
-    oval(pelvis,[0,0,0],mascot ? [.205,.12,.14] : [.19,.14,.13],mascot ? shirt : colors.red);
+    const shirt = female ? colors.red : colors.white;
+    oval(torso,[0,0,0],[.225,.30,.135],shirt);
+    oval(pelvis,[0,0,0],[.19,.14,.13],colors.red);
+    for (const side of [-1,1]) oval(torso,[side*.20,-.03,.01],[.018,.25,.115],colors.red);
+    oval(torso,[0,.08,.133],[.06,.016,.008],female ? colors.white : colors.red);
+    oval(torso,[0,-.20,.01],[.22,.05,.137],shirt);
+    oval(head,[0,-.19,-.005],[.063,.08,.06],colors.skin);
+    oval(head,[0,0,0],[.128,.175,.125],colors.skin);
+    oval(head,[0,-.085,.026],[.105,.095,.09],colors.skin);
+    oval(head,[0,.115,-.02],[.133,.075,.123],colors.ink);
+    oval(head,[0,.065,-.085],[.125,.09,.055],colors.ink);
+    oval(head,[0,-.005,.13],[.024,.04,.035],colors.skin);
     for (const side of [-1,1]) {
-      oval(torso,[side*.20,-.03,.01],[.018,mascot ? .17 : .25,.115],level >= 16 && mascot ? colors.gold : colors.red);
+      oval(head,[side*.135,-.005,0],[.024,.045,.02],colors.skin);
+      oval(head,[side*.049,.035,.115],[.025,.010,.008],colors.ink);
+      oval(head,[side*.05,.065,.112],[.030,.007,.008],colors.ink);
     }
-    if (mascot) {
-      oval(torso,[0,.035,.145],[.19,.013,.009],level >= 16 ? colors.gold : colors.red);
-      oval(torso,[0,.005,.15],[.19,.006,.009],level >= 16 ? colors.gold : colors.red);
-      if (level >= 8) for (const y of [-.1,0,.1]) {
-        oval(torso,[0,y,.16],[.018,.018,.01],colors.gold,.6);
-        oval(torso,[.025,y,.16],[.04,.008,.007],colors.gold,.6);
-      }
-    } else {
-      oval(head,[0,-.19,-.005],[.063,.08,.06],colors.skin);
-      oval(torso,[0,.08,.133],[.06,.016,.008],female ? colors.white : colors.red);
-      oval(torso,[0,-.20,.01],[.22,.05,.137],shirt);
-    }
-
-    if (mascot) {
-      oval(head,[0,.04,-.02],[.53,.46,.40],colors.white);
-      oval(head,[0,-.015,.22],[.405,.355,.205],colors.skin);
-      oval(head,[0,.22,.30],[.345,.115,.06],colors.ink);
-      for (let i=0;i<7;i++) {
-        oval(head,[(i-3)*.075,.22-Math.abs(i-3)*.012,.34],[.055,.06,.025],colors.ink);
-      }
-      for (const side of [-1,1]) {
-        oval(head,[side*.16,.015,.40],[.09,.104,.037],colors.ink);
-        oval(head,[side*.16-.022,.052,.436],[.027,.033,.012],0xffffff);
-        oval(head,[side*.285,-.10,.363],[.068,.043,.014],0xf0a393);
-        oval(head,[side*.165,.15,.389],[.083,.021,.015],colors.ink);
-      }
-      oval(head,[0,-.16,.408],[.10,.065,.018],0x8e302c);
-      oval(head,[0,-.185,.424],[.057,.025,.008],0xef887e);
-      const hat = level >= 16 ? 0xf4d789 : colors.white;
-      oval(head,[0,.51,-.005],[.55,.31,.39],hat);
-      for (const side of [-1,1]) {
-        oval(head,[side*.435,.76,-.02],[.205,.215,.15],colors.red);
-        oval(head,[side*.435,.77,.115],[.13,.135,.055],hat);
-        oval(head,[side*.26,.54,.31],[.205,.195,.09],colors.green);
-        oval(head,[side*.26,.54,.36],[.169,.16,.075],0xfff6dc);
-        oval(head,[side*.26,.54,.404],[.133,.13,.06],0xd77a35);
-        oval(head,[side*.26,.54,.454],[.103,.103,.034],colors.ink);
-        oval(head,[side*.28,.585,.48],[.035,.042,.013],0xffffff);
-        for (let i=0;i<7;i++) {
-          const angle = i/6*Math.PI;
-          oval(head,[side*.26+Math.cos(angle)*.18,.58+Math.sin(angle)*.16,.395],[.045,.05,.045],hat);
-        }
-        ring(head,[side*.48,.26,.15],.065,.016,colors.gold,[0,side*.6,0]);
-        oval(head,[side*.49,.25,.19],[.028,.028,.018],colors.gold,.65);
-        oval(head,[side*.14,.425,.46],[.082,.077,.065],0xeb7437);
-      }
-      oval(head,[0,.48,.435],[.11,.095,.09],colors.green);
-      ring(head,[0,.69,.371],.115,.023,colors.gold);
-      oval(head,[0,.69,.382],[.086,.086,.034],level >= 16 ? 0xffd965 : colors.green,.4);
-      for (let i=0;i<17;i++) {
-        const x = (i-8)*.059;
-        oval(head,[x,.295+Math.sin(i/16*Math.PI)*.045,.337+Math.sin(i/16*Math.PI)*.06],[.06,.055,.055],hat);
-      }
-      const crown = new THREE.Mesh(new THREE.ConeGeometry(.115,.25,20),material(colors.red));
-      crown.position.set(0,.895,0);
-      head.add(crown);
-      ring(head,[0,.80,0],.14,.022,colors.gold,[Math.PI/2,0,0]);
-      ring(head,[0,.89,0],.08,.018,colors.white,[Math.PI/2,0,0]);
-      oval(head,[0,1.03,0],[.049,.042,.049],colors.gold,.55);
-      if (level >= 5) {
-        oval(head,[.36,-.22,.11],[.055,.06,.055],colors.gold,.7);
-        ring(head,[.36,-.18,.11],.032,.012,colors.gold,[Math.PI/2,0,0]);
-      }
-      if (level >= 12) {
-        const cape = new THREE.Mesh(new THREE.ConeGeometry(.40,.68,28,1,true,Math.PI*.20,Math.PI*1.6),material(colors.red));
-        cape.position.set(0,-.08,-.06);
-        cape.rotation.z = Math.PI;
-        torso.add(cape);
-        for (const side of [-1,1]) oval(torso,[side*.16,.13,.13],[.046,.046,.018],colors.gold,.6);
-      }
-    } else {
-      oval(head,[0,0,0],[.128,.175,.125],colors.skin);
-      oval(head,[0,-.085,.026],[.105,.095,.09],colors.skin);
-      oval(head,[0,.115,-.02],[.133,.075,.123],colors.ink);
-      oval(head,[0,.065,-.085],[.125,.09,.055],colors.ink);
-      oval(head,[0,-.005,.13],[.024,.04,.035],colors.skin);
-      for (const side of [-1,1]) {
-        oval(head,[side*.135,-.005,0],[.024,.045,.02],colors.skin);
-        oval(head,[side*.049,.035,.115],[.025,.010,.008],colors.ink);
-        oval(head,[side*.05,.065,.112],[.030,.007,.008],colors.ink);
-      }
-      oval(head,[0,-.074,.112],[.035,.006,.006],0x9d6660);
-      if (female) {
-        oval(head,[0,.08,-.15],[.075,.12,.07],colors.ink);
-        oval(head,[0,-.045,-.20],[.05,.17,.05],colors.ink);
-      }
+    oval(head,[0,-.074,.112],[.035,.006,.006],0x9d6660);
+    if (female) {
+      oval(head,[0,.08,-.15],[.075,.12,.07],colors.ink);
+      oval(head,[0,-.045,-.20],[.05,.17,.05],colors.ink);
     }
     const limbs = {};
     for (const side of [-1,1]) {
@@ -204,79 +152,100 @@
     const frame = group('Bicycle');
     const radius = toy ? .28 : .36;
     const span = toy ? .57 : .74;
-    const bottom = toy ? .36 : .45;
+    const bottom = toy ? .35 : .45;
+    const crankRadius = toy ? .13 : .17;
     const rear = v(0,radius,-span);
     const front = v(0,radius,span);
     const crank = v(0,bottom,0);
-    const seat = v(0,toy ? .71 : 1.16,-.25);
+    const seat = v(0,toy ? .54 : 1.07,toy ? -.12 : -.25);
     const stem = v(0,toy ? .81 : 1.07,span-.08);
+    const frameColor = toy ? 0xe77a30 : colors.red;
     const connect = (a,b,width,color) => {
       const tube = oval(frame,[0,0,0],[1,1,1],color);
       align(tube,a,b,width);
     };
-    for (const [a,b] of [[rear,seat],[seat,crank],[rear,crank],[seat,stem],[crank,stem],[stem,front]]) connect(a,b,.026,colors.red);
+    for (const [a,b] of [[rear,seat],[seat,crank],[rear,crank],[seat,stem],[crank,stem],[stem,front]]) connect(a,b,.023,frameColor);
     const wheels = [];
     for (const point of [rear,front]) {
       const wheel = group(wheels.length ? 'FrontWheel' : 'RearWheel',frame);
       wheel.position.copy(point);
-      ring(wheel,[0,0,0],radius,.028,colors.ink,[0,Math.PI/2,0]);
+      ring(wheel,[0,0,0],radius,.027,colors.ink,[0,Math.PI/2,0]);
       ring(wheel,[0,0,0],radius-.035,.009,0xc5c5bd,[0,Math.PI/2,0]);
-      for(let i=0;i<12;i++) {
-        const angle = i/12*TAU;
+      for(let i=0;i<16;i++) {
+        const angle = i/16*TAU;
         const spoke = oval(wheel,[0,0,0],[1,1,1],0xb8b7b0);
-        align(spoke,v(0,0,0),v(0,Math.cos(angle)*(radius-.04),Math.sin(angle)*(radius-.04)),.004);
+        align(spoke,v(0,0,0),v(0,Math.cos(angle)*(radius-.04),Math.sin(angle)*(radius-.04)),.0035);
       }
       wheels.push(wheel);
     }
     oval(frame,[0,seat.y+.015,seat.z],[.14,.035,.12],colors.ink);
-    connect(stem,v(0,toy ? .90 : 1.24,span-.02),.022,0x4a514e);
-    connect(v(-.23,toy ? .90 : 1.24,span-.02),v(.23,toy ? .90 : 1.24,span-.02),.022,0x4a514e);
+    connect(stem,v(0,toy ? .92 : 1.24,span-.02),.022,0x4a514e);
+    connect(v(-.23,toy ? .92 : 1.24,span-.02),v(.23,toy ? .92 : 1.24,span-.02),.022,0x4a514e);
     const pedal = group('Crank',frame);
     pedal.position.copy(crank);
+    const pads = {};
     for(const side of [-1,1]) {
       const beam = oval(pedal,[0,0,0],[1,1,1],0x8f9390);
-      align(beam,v(side*.13,0,0),v(side*.13,side*.16,0),.015);
-      oval(pedal,[side*.16,side*.16,0],[.06,.015,.035],colors.ink);
+      const direction = side < 0 ? 1 : -1;
+      align(beam,v(side*.15,0,0),v(side*.15,direction*crankRadius,0),.014);
+      const pad = group(side < 0 ? 'LeftPedal' : 'RightPedal',frame);
+      oval(pad,[0,0,0],[.07,.014,.05],colors.ink);
+      pads[side] = pad;
     }
-    return {frame,wheels,pedal,radius,span,bottom};
+    ring(frame,[.05,bottom,0],crankRadius*.60,.009,0x797e78,[0,Math.PI/2,0]);
+    connect(v(.05,bottom+crankRadius*.55,0),v(.05,radius+.045,-span),.006,0x6e746e);
+    connect(v(.05,bottom-crankRadius*.55,0),v(.05,radius-.045,-span),.006,0x6e746e);
+    return {frame,wheels,pedal,pads,radius,span,bottom,crankRadius};
   }
 
   function pose(rig,move,time) {
     const {mascot,head,torso,pelvis,limbs,ball,bicycle} = rig;
     const cycle = move === 'cycle';
-    const phase = time*TAU*(cycle ? 1.3 : .42);
-    const depth = (1-Math.cos(phase))*.5;
+    const duration = MOTION_SECONDS[move] || 4.8;
+    const unit = ((time%duration)+duration)%duration/duration;
+    const phase = unit*TAU;
+    const depth = Math.min(ease(unit/.42),1-ease((unit-.55)/.38));
+    const breath = Math.sin(phase)*.003;
     const hip = v(0,mascot ? .55 : .98,0);
-    const shoulder = v(0,mascot ? .94 : 1.47,0);
+    const shoulder = v(0,mascot ? 1.03 : 1.47,0);
     let lean = 0;
-    if (move === 'squat') {
-      hip.y -= depth*(mascot ? .15 : .35);
-      hip.z -= depth*.14;
-      shoulder.y -= depth*(mascot ? .15 : .38);
-      shoulder.z += depth*.18;
-      lean = depth*.26;
+    const crouch = move === 'jump' ? Math.max(pulseWindow(unit,0,.22),pulseWindow(unit,.72,.96)) : 0;
+    if (move === 'squat' || crouch) {
+      const bendAmount = move === 'squat' ? depth : crouch*.45;
+      hip.y -= bendAmount*(mascot ? .13 : .33);
+      hip.z -= bendAmount*.14;
+      shoulder.y -= bendAmount*(mascot ? .14 : .36);
+      shoulder.z += bendAmount*.16;
+      lean = bendAmount*.28;
+    }
+    if (move === 'march') {
+      hip.x = Math.sin(phase)*.007;
+      shoulder.x = -Math.sin(phase)*.004;
     }
     if (cycle) {
-      hip.set(0,mascot ? .71 : 1.16,-.25);
-      shoulder.set(0,mascot ? 1.00 : 1.52,mascot ? .20 : .30);
-      lean = mascot ? .42 : .55;
+      hip.set(0,mascot ? .63 : 1.19,mascot ? -.12 : -.25);
+      shoulder.set(0,mascot ? 1.07 : 1.53,mascot ? .18 : .30);
+      lean = Math.atan2(shoulder.z-hip.z,shoulder.y-hip.y);
     }
     if (move === 'pushup') {
-      hip.set(0,.48-depth*.20,-.10);
-      shoulder.set(0,.54-depth*.21,.68);
-      lean = 1.48;
+      shoulder.set(0,.56-depth*.22,.65);
+      hip.lerpVectors(v(0,.085,-.94),shoulder,.52);
+      lean = Math.atan2(shoulder.z-hip.z,shoulder.y-hip.y);
     }
     if (move === 'dog') {
-      hip.set(0,.90+depth*.26,-.2);
-      shoulder.set(0,.71-depth*.07,.44);
-      lean = 1.8+depth*.4;
+      hip.set(0,.835+breath,-.16);
+      shoulder.set(0,.49+breath*.5,.38);
+      lean = Math.atan2(shoulder.z-hip.z,shoulder.y-hip.y);
     }
+    if (move === 'idle' || move === 'neck' || move === 'shoulder') shoulder.y += breath;
     torso.position.copy(shoulder).add(hip).multiplyScalar(.5);
+    if (mascot) torso.position.y += .075;
     torso.rotation.set(lean,0,0);
+    torso.scale.y = move === 'idle' ? 1+Math.sin(phase)*.003 : 1;
     pelvis.position.copy(hip);
-    const headOffset = move === 'dog' ? v(0,-.1,.20) : move === 'pushup' ? v(0,.05,.26) : v(0,mascot ? .35 : .27,cycle ? .13 : .015);
+    const headOffset = move === 'dog' ? v(0,-.07,.15) : move === 'pushup' ? v(0,.05,.23) : v(0,mascot ? .10 : .27,cycle ? .10 : .015);
     head.position.copy(shoulder).add(headOffset);
-    head.rotation.set(move === 'dog' ? .65 : move === 'pushup' ? .65 : cycle ? -.12 : 0,0,move === 'neck' ? Math.sin(phase*.5)*.25 : 0);
+    head.rotation.set(move === 'dog' ? .55 : move === 'pushup' ? .60 : cycle ? -.12 : move === 'wave' ? -.025*Math.sin(phase)**2 : 0,0,move === 'neck' ? Math.sin(phase)*.20 : 0);
     bicycle.frame.visible = cycle;
     bicycle.frame.scale.setScalar(cycle ? 1 : .0001);
     rig.helmet.visible = cycle && !mascot;
@@ -284,58 +253,74 @@
     ball.visible = move === 'shot';
     ball.scale.setScalar(move === 'shot' ? .14 : .0001);
     bicycle.pedal.rotation.x = phase;
-    bicycle.wheels.forEach(wheel => { wheel.rotation.x = phase*1.7; });
+    bicycle.wheels.forEach(wheel => { wheel.rotation.x = phase*1.8; });
 
+    const greeting = ease(unit/.22)*(1-ease((unit-.75)/.25));
     for(const side of [-1,1]) {
       const limb = limbs[side];
-      const offset = side < 0 ? 0 : Math.PI;
-      const step = Math.sin(phase+offset);
-      const start = hip.clone().add(v(side*(mascot ? .105 : .135),0,0));
-      const ankle = v(side*(mascot ? .12 : .18),.075,.015);
+      const legPhase = phase+(side < 0 ? 0 : Math.PI);
+      const step = Math.sin(legPhase);
+      const lift = Math.max(0,step)**2;
+      const start = hip.clone().add(v(side*(mascot ? .15 : .135),0,0));
+      const ankle = v(side*(mascot ? .15 : .18),mascot ? .08 : .075,.015);
+      let anklePitch = 0;
       if (move === 'march') {
-        ankle.y += Math.max(0,step)*(mascot ? .17 : .35);
-        ankle.z += Math.max(0,step)*(mascot ? .15 : .28);
+        ankle.y += lift*(mascot ? .11 : .25);
+        ankle.z += lift*(mascot ? .09 : .18);
+        anklePitch = -.07*lift;
       }
-      if (move === 'pushup' || move === 'dog') ankle.z = move === 'pushup' ? -.96 : -.85;
+      if (move === 'pushup' || move === 'dog') ankle.z = move === 'pushup' ? -.94 : -.66;
       if (cycle) {
-        ankle.set(side*.16,bicycle.bottom+Math.cos(phase+offset)*.16,Math.sin(phase+offset)*.16);
+        const pad = bicycle.pads[side];
+        anklePitch = .08*Math.sin(legPhase+.35);
+        pad.position.set(side*.20,bicycle.bottom+Math.cos(legPhase)*bicycle.crankRadius,Math.sin(legPhase)*bicycle.crankRadius);
+        pad.rotation.x = anklePitch;
+        const sole = mascot ? .070 : .054;
+        const ballOfFoot = mascot ? .055 : .105;
+        const contactOffset = v(0,-sole,ballOfFoot).applyAxisAngle(v(1,0,0),anklePitch);
+        ankle.copy(pad.position).add(v(0,.014,0)).sub(contactOffset);
       }
-      const knee = bend(start,ankle,mascot ? .265 : .46,mascot ? .265 : .46,v(0,0,1));
-      align(limb.thigh,start,knee,mascot ? .085 : .09);
-      align(limb.shin,knee,ankle,mascot ? .069 : .056);
+      const knee = bend(start,ankle,mascot ? .24 : .46,mascot ? .23 : .46,v(0,0,1));
+      align(limb.thigh,start,knee,mascot ? .145 : .09);
+      align(limb.shin,knee,ankle,mascot ? .135 : .056);
       limb.kneeJoint.position.copy(knee);
       limb.foot.position.copy(ankle);
-      limb.foot.rotation.x = cycle ? .10*Math.sin(phase+offset) : move === 'pushup' ? -.9 : 0;
-      const armRoot = shoulder.clone().add(v(side*(mascot ? .20 : .205),-.015,0));
-      const hand = shoulder.clone().add(v(side*(mascot ? .27 : .27),mascot ? -.32 : -.50,.04));
+      limb.foot.rotation.x = cycle || move === 'march' ? anklePitch : move === 'pushup' ? -.9 : 0;
+      const armRoot = shoulder.clone().add(v(side*(mascot ? .29 : .205),-.015,0));
+      const hand = shoulder.clone().add(v(side*(mascot ? .35 : .27),mascot ? -.53 : -.50,.04));
       let elbowPole = v(side,0,-.2);
       if (move === 'march') {
-        hand.y += .10;
-        hand.z = step*(mascot ? .15 : .28);
+        hand.y += .08;
+        hand.z = -step*(mascot ? .12 : .22);
       }
-      if (move === 'squat') hand.set(side*.07,shoulder.y-.13,shoulder.z+(mascot ? .30 : .45));
+      if (move === 'squat') hand.set(side*.08,shoulder.y-.14,shoulder.z+(mascot ? .34 : .44));
       if (cycle) {
-        hand.set(side*.23,mascot ? .90 : 1.24,bicycle.span-.02);
+        hand.set(side*.23,mascot ? .92 : 1.24,bicycle.span-.02);
         elbowPole = v(0,-1,-.4);
       }
       if (move === 'pushup' || move === 'dog') {
-        hand.set(side*.27,.075,move === 'pushup' ? .88 : .97);
-        elbowPole = v(side,0,-1);
+        hand.set(side*.27,.075,move === 'pushup' ? .87 : .78);
+        elbowPole = v(side,0,-.5);
       }
-      if (move === 'shoulder') hand.set(side*-.03,shoulder.y-.08,.44+depth*.12);
+      if (move === 'shoulder') hand.set(side*-.03,shoulder.y-.08,.43+.08*(1-Math.cos(phase))*.5);
       if (move === 'shot') {
-        hand.set(side*.085,shoulder.y+.1+depth*.28,.35-depth*.13);
+        hand.set(side*.085,shoulder.y+.08+depth*.25,.34-depth*.12);
         ball.position.copy(hand).add(v(-side*.085,.14,.025));
       }
-      if (move === 'wave' && side === -1) hand.set(-.39+Math.sin(phase*2)*.075,shoulder.y+.36,.10);
-      if (move === 'cheer' || move === 'jump') hand.set(side*.32,shoulder.y+.27,.02);
-      const elbow = bend(armRoot,hand,mascot ? .22 : .30,mascot ? .22 : .28,elbowPole);
-      align(limb.upperArm,armRoot,elbow,mascot ? .060 : .059);
-      align(limb.forearm,elbow,hand,mascot ? .048 : .043);
+      if (move === 'wave' && side === -1) hand.lerp(v(-.44+Math.sin(phase*3)*.045,shoulder.y+.30,.09),greeting);
+      if (move === 'cheer' || move === 'jump') {
+        const raised = move === 'cheer' ? greeting : ease(unit/.25)*(1-ease((unit-.7)/.3));
+        hand.lerp(v(side*.40,shoulder.y+.30,.05),raised);
+      }
+      const elbow = bend(armRoot,hand,mascot ? .24 : .30,mascot ? .31 : .28,elbowPole);
+      align(limb.upperArm,armRoot,elbow,mascot ? .085 : .059);
+      align(limb.forearm,elbow,hand,mascot ? .085 : .043);
       limb.elbowJoint.position.copy(elbow);
+      rig.skins?.[side].arm.update(armRoot,elbow,hand);
+      rig.skins?.[side].leg.update(start,knee,ankle);
     }
-    rig.root.position.y = move === 'jump' ? Math.abs(Math.sin(phase))*.16 : move === 'idle' ? Math.sin(phase*.5)*.007 : 0;
-    rig.root.rotation.z = move === 'cheer' ? Math.sin(phase)*.045 : 0;
+    rig.root.position.y = move === 'jump' ? pulseWindow(unit,.22,.72)*.16 : 0;
+    rig.root.rotation.z = move === 'cheer' ? Math.sin(phase)*greeting*.025 : 0;
   }
 
   function disposeObject(object) {
@@ -355,10 +340,23 @@
       this.playback = playback;
       this.key = host.dataset.modelKey || [host.dataset.model,host.dataset.level,host.dataset.move,host.className].join(':');
       const saved = savedPositions.get(this.key);
-      this.time = saved?.time || 0;
-      this.yaw = saved?.yaw ?? (host.dataset.move === 'cycle' ? 1.03 : .24);
+      const sameMotion = saved?.move === host.dataset.move;
+      this.time = sameMotion ? saved.time : 0;
+      this.resumeTime = sameMotion ? saved.localTime : undefined;
+      if (host.dataset.startTime) {
+        this.time = Number(host.dataset.startTime);
+        this.resumeTime = this.time;
+      }
+      this.renderedTime = this.time;
+      this.speed = 1;
+      this.yaw = saved?.yaw ?? (host.dataset.move === 'cycle' ? 1.03 : ['mascot','bike'].includes(host.dataset.model) ? .08 : .24);
       this.drag = null;
-      this.rig = makeRig(host.dataset.model,Number(host.dataset.level) || 5);
+      this.cameraAngle = saved?.cameraAngle ?? this.yaw;
+      this.cameraMark = performance.now();
+      const kind = host.dataset.model;
+      const level = Number(host.dataset.level) || 5;
+      const loadCharacter = ['mascot','bike'].includes(kind) && location.protocol !== 'file:' && !host.dataset.procedural;
+      this.rig = loadCharacter ? {root:new THREE.Group(),kind,level,mascot:true,pending:true} : makeRig(kind,level);
       this.scene = new THREE.Scene();
       this.renderer = new THREE.WebGLRenderer({canvas:host.querySelector('canvas'),alpha:true,antialias:true,preserveDrawingBuffer:true});
       this.renderer.setPixelRatio(Math.min(devicePixelRatio,1.65));
@@ -367,7 +365,7 @@
       this.renderer.toneMappingExposure = 1.35;
       this.renderer.shadowMap.enabled = true;
       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      this.camera = new THREE.PerspectiveCamera(33,1,.1,25);
+      this.camera = this.rig.mascot ? new THREE.OrthographicCamera(-1.32,1.32,1.32,-1.32,.1,25) : new THREE.PerspectiveCamera(33,1,.1,25);
       this.scene.add(new THREE.HemisphereLight(0xfffaf1,0x9d9a8d,2.6));
       const key = new THREE.DirectionalLight(0xfff5df,3.4);
       key.position.set(-3,5,4);
@@ -381,7 +379,7 @@
       const rim = new THREE.DirectionalLight(0xffffff,2);
       rim.position.set(3,3,-3);
       this.scene.add(rim,this.rig.root);
-      const floor = new THREE.Mesh(new THREE.CircleGeometry(2.4,48),new THREE.ShadowMaterial({opacity:.12}));
+      const floor = new THREE.Mesh(new THREE.CircleGeometry(2.4,48),new THREE.ShadowMaterial({opacity:.07}));
       floor.rotation.x = -Math.PI/2;
       floor.position.y = .008;
       floor.receiveShadow = true;
@@ -398,6 +396,7 @@
       },options);
       host.addEventListener('pointerup',() => { this.drag = null; },options);
       host.addEventListener('pointercancel',() => { this.drag = null; },options);
+      host.addEventListener('lostpointercapture',() => { this.drag = null; },options);
       host.addEventListener('keydown',event => {
         if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
           event.preventDefault();
@@ -412,6 +411,10 @@
         if (!width || !height) return;
         this.renderer.setSize(width,height,false);
         this.camera.aspect = width/height;
+        if (this.camera.isOrthographicCamera) {
+          this.camera.left = -1.32*width/height;
+          this.camera.right = 1.32*width/height;
+        }
         this.camera.updateProjectionMatrix();
         this.draw();
       });
@@ -422,16 +425,16 @@
         this.previous = now;
         if (!this.visible || document.hidden) return;
         const control = this.playback(this.host);
-        if (control.playing) this.time += elapsed*control.speed;
-        if (Number.isFinite(control.frame)) this.time = control.frame;
+        this.speed = THREE.MathUtils.lerp(this.speed,control.speed,1-Math.exp(-elapsed/.18));
+        if (control.playing) this.time += elapsed*this.speed;
         this.move = control.move || this.host.dataset.move || 'idle';
         this.angle = control.angle;
-        this.draw();
+        this.draw(control.frame);
       });
-      host.classList.add('model-ready');
+      if (!this.rig.pending) host.classList.add('model-ready');
       host.dataset.ready = 'true';
       instances.add(this);
-      if (location.protocol !== 'file:') void this.loadModel();
+      if (location.protocol !== 'file:' && !host.dataset.procedural) void this.loadModel();
     }
     async loadModel() {
       const kind = this.rig.kind;
@@ -445,37 +448,70 @@
         this.scene.remove(this.rig.root);
         disposeObject(this.rig.root);
         this.model = loaded.scene;
+        if (this.rig.mascot) {
+          this.model.traverse(node => {
+            const materials = Array.isArray(node.material) ? node.material : [node.material];
+            for(const material of materials) if (material?.isMeshBasicMaterial) material.toneMapped = false;
+          });
+        }
         this.scene.add(this.model);
         this.mixer = new THREE.AnimationMixer(this.model);
         this.clips = loaded.animations;
+        this.rig.pending = false;
+        this.host.classList.add('model-ready');
         this.host.dataset.asset = filename+'.glb';
       } catch {
-        // The equivalent local rig keeps the scene usable during a failed media request.
+        if (this.destroyed) return;
+        if (this.rig.pending) {
+          this.scene.remove(this.rig.root);
+          this.rig = makeRig(kind,Number(this.host.dataset.level) || 5);
+          this.scene.add(this.rig.root);
+          this.host.classList.add('model-ready');
+        }
       }
     }
-    draw() {
+    draw(seek) {
       const move = this.move || this.host.dataset.move || 'idle';
       if (this.mixer) {
         const clip = this.clips.find(clip => clip.name === move);
         if (clip && this.clip !== clip) {
-          this.mixer.stopAllAction();
-          this.mixer.clipAction(clip).play();
+          const next = this.mixer.clipAction(clip).reset().setEffectiveWeight(1).play();
+          if (this.action) this.action.crossFadeTo(next,.42,false);
+          else next.time = (this.resumeTime ?? this.time)%clip.duration;
+          this.action = next;
           this.clip = clip;
         }
-        this.mixer.setTime(this.time);
-      } else {
-        pose(this.rig,move,this.time);
+        if (Number.isFinite(seek)) {
+          if (seek !== this.lastSeek) {
+            this.mixer.stopAllAction();
+            this.action.reset().setEffectiveWeight(1).play();
+            this.action.time = Math.min(seek,this.clip.duration-.0001);
+          }
+          this.mixer.update(0);
+        } else {
+          this.mixer.update(Math.max(0,this.time-this.renderedTime));
+        }
+      } else if (!this.rig.pending) {
+        pose(this.rig,move,Number.isFinite(seek) ? seek : this.time);
       }
+      this.lastSeek = seek;
+      this.renderedTime = this.time;
       const ground = ['pushup','dog'].includes(this.move);
       const target = ground ? .65 : this.rig.mascot ? 1.23 : 1.0;
       const radius = this.rig.mascot ? 4.8 : 4.5;
-      const angle = this.angle === 'side' ? 1.38 : this.yaw;
-      this.camera.position.set(Math.sin(angle)*radius,target+.40,Math.cos(angle)*radius);
+      const now = performance.now();
+      const elapsed = Math.min((now-this.cameraMark)/1000,.1);
+      this.cameraMark = now;
+      const targetAngle = this.angle === 'side' ? 1.38 : this.yaw;
+      const rotation = Math.atan2(Math.sin(targetAngle-this.cameraAngle),Math.cos(targetAngle-this.cameraAngle));
+      this.cameraAngle += rotation*(1-Math.exp(-elapsed/.14));
+      const angle = this.cameraAngle;
+      this.camera.position.set(Math.sin(angle)*radius,target+(this.rig.mascot ? .02 : .40),Math.cos(angle)*radius);
       this.camera.lookAt(0,target,0);
       this.renderer.render(this.scene,this.camera);
     }
     destroy() {
-      savedPositions.set(this.key,{time:this.time,yaw:this.yaw});
+      savedPositions.set(this.key,{time:this.time,yaw:this.yaw,cameraAngle:this.cameraAngle,localTime:this.action?.time,move:this.move || this.host.dataset.move});
       this.destroyed = true;
       this.renderer.setAnimationLoop(null);
       this.controller.abort();
@@ -490,12 +526,13 @@
   }
 
   async function exportGLB(kind,level = 5) {
+    if (kind === 'mascot' || kind === 'bike') await window.RuiangCharacter.ready;
     const rig = makeRig(kind,level);
     const motions = kind === 'mascot' ? ['idle','wave','jump','cheer','cycle'] : kind === 'bike' ? ['cycle'] : ['march','squat','pushup','dog','neck','shoulder','shot','cycle'];
     const clips = motions.map(move => {
       const times = [];
       const tracks = new Map(rig.joints.map(node => [node,{position:[],quaternion:[],scale:[]} ]));
-      const duration = move === 'cycle' ? 1/1.3 : ['neck','idle'].includes(move) ? 2/.42 : ['wave','jump'].includes(move) ? 1/(.42*2) : 1/.42;
+      const duration = MOTION_SECONDS[move] || 4.8;
       for(let i=0;i<=96;i++) {
         const time = i/96*duration;
         times.push(time);
@@ -521,18 +558,41 @@
   }
 
   window.RuiangMotion = {
-    mount(container,playback) {
-      for (const instance of [...instances]) if (!instance.host.isConnected) instance.destroy();
+    detach(container) {
+      const retained = [...instances].filter(instance => container.contains(instance.host));
+      for(const instance of retained) instance.host.remove();
+      return retained;
+    },
+    mount(container,playback,retained = []) {
+      for (const instance of [...instances]) if (!instance.host.isConnected && !retained.includes(instance)) instance.destroy();
       for(const host of container.querySelectorAll('[data-model]')) {
+        const previous = retained.find(instance => !instance.destroyed && instance.key === host.dataset.modelKey);
+        if (previous) {
+          previous.host.dataset.move = host.dataset.move;
+          previous.host.className = host.className+(previous.rig.pending ? '' : ' model-ready');
+          previous.playback = playback;
+          host.replaceWith(previous.host);
+          retained = retained.filter(instance => instance !== previous);
+          continue;
+        }
         if (host.dataset.ready) continue;
-        try { new Stage(host,playback); }
-        catch(error) { host.classList.add('model-failed'); host.dataset.ready = 'failed'; console.warn('3D 场景暂时无法加载',error.message); }
+        host.dataset.ready = 'loading';
+        const ready = ['mascot','bike'].includes(host.dataset.model) ? window.RuiangCharacter.ready : Promise.resolve();
+        void ready.then(() => {
+          if (host.isConnected) new Stage(host,playback);
+        }).catch(error => {
+          host.classList.add('model-failed');
+          host.dataset.ready = 'failed';
+          console.warn('3D 场景暂时无法加载',error.message);
+        });
       }
+      for(const instance of retained) instance.destroy();
     },
     clear() { for(const instance of [...instances]) instance.destroy(); },
     release(container) { for(const instance of [...instances]) if (container.contains(instance.host)) instance.destroy(); },
     exportGLB,
-    setFrame(time) { for(const instance of instances) { instance.time = time; instance.draw(); } },
+    durations:MOTION_SECONDS,
+    setFrame(time) { for(const instance of instances) { instance.time = time; instance.draw(time); } },
     get stages() { return [...instances]; },
   };
 })();

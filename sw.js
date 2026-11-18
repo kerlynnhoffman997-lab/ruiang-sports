@@ -1,6 +1,6 @@
 const scope = new URL(self.registration.scope);
 const cachePrefix = 'ruiang-mobile:'+scope.href+':';
-const cacheName = cachePrefix+'v3';
+const cacheName = cachePrefix+'v4';
 const outfitNames = ['sport','running','badminton','basketball','football','yoga','tang','hanfu','casual','festive'];
 const propNames = ['coin','fruit','bottle','bell','headband','wristband','ribbon','gift'];
 const images = [
@@ -11,7 +11,8 @@ const images = [
   ...['m','f'].flatMap(coach => Array.from({length:8},(_,index) => 'coach-'+coach+(index+1)+'.jpg')),
 ];
 const appFiles = [
-  'index.html','app.css','content.js','views.js','app.js','motion3d.js','app.webmanifest',
+  'index.html','app.css','content.js','views.js','app.js','character3d.js','motion3d.js','app.webmanifest',
+  'assets/character-references.js',
   'assets/vendor/three-runtime.js','assets/growth-stages.jpg',
   ...['ruiang-stage-1','ruiang-stage-5','ruiang-stage-8','ruiang-stage-12','ruiang-stage-16','coach-male','coach-female','ruiang-bike']
     .map(name => 'assets/models/'+name+'.glb'),

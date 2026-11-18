@@ -198,13 +198,13 @@ function cyclingView() {
   const courses = COURSES.filter(course => course.group === '骑行');
   const cues = [
     ['目光向前','头颈自然延伸，肩膀放松，肘部保留轻微弯曲。'],
-    ['骨盆稳定','坐稳车座，膝盖与脚尖同向，避免身体左右摇晃。'],
+    ['脚踏对正','前脚掌对应脚踏轴心，膝盖跟随脚尖；踩到底时膝盖保留轻微弯曲。'],
     ['平顺踩踏','先用轻阻力，寻找舒适踏频。可从每分钟 70–90 转的范围中调整。'],
     ['循序渐进','热身后再增加强度，最后用轻松踩踏收尾。全程保持自然呼吸。'],
   ];
   return `${pageHead('一起去骑行',{back:'train',action:coinPill()})}
   <section class="card cycling-demo"><div class="cycling-demo-heading"><div><span class="text-tag tone-mint">动作示范</span><h2>找到舒服的骑行姿态</h2></div><button class="icon-button" data-action="cycling-play" aria-label="${ui.cyclingPlaying ? '暂停骑行示范' : '播放骑行示范'}">${icon(ui.cyclingPlaying ? 'pause' : 'triangle',22)}</button></div>${modelMarkup('male','cycle',5,'cycling-model')}<div class="cycling-demo-caption"><span>${icon('rotate',16)}左右拖动旋转</span><span>坐姿 · 平顺踩踏</span></div></section>
-  <section class="card cycling-technique"><div class="section-heading"><h2>骑行动作规范</h2></div><ol>${cues.map(([title,text],index) => `<li><b>${index+1}</b><div><h3>${title}</h3><p>${text}</p></div></li>`).join('')}</ol><p class="cycling-safety">适合健身车或安全封闭场地。户外骑行时，请先停稳再操作屏幕。</p><details class="cycling-sources"><summary>查看动作参考</summary><p><a href="https://www.britishcycling.org.uk/knowledge/skills/get-started/article/izn20180118-Get-Started-How-to-climb---10-top-tips-for-beginners-0" target="_blank" rel="noopener">British Cycling · 姿态与踩踏</a><a href="https://www.cyclinguk.org/article/campaigns-guide/cycling-tips-24-essential-pieces-riding-advice-beginners" target="_blank" rel="noopener">Cycling UK · 入门骑行</a></p></details></section>
+  <section class="card cycling-technique"><div class="section-heading"><h2>骑行动作规范</h2></div><ol>${cues.map(([title,text],index) => `<li><b>${index+1}</b><div><h3>${title}</h3><p>${text}</p></div></li>`).join('')}</ol><p class="cycling-safety">适合健身车或安全封闭场地。户外骑行时，请先停稳再操作屏幕。</p><details class="cycling-sources"><summary>查看动作参考</summary><p><a href="https://www.britishcycling.org.uk/knowledge/skills/get-started/article/izn20180118-Get-Started-How-to-climb---10-top-tips-for-beginners-0" target="_blank" rel="noopener">British Cycling · 姿态与踩踏</a><a href="https://www.cyclinguk.org/article/campaigns-guide/cycling-tips-24-essential-pieces-riding-advice-beginners" target="_blank" rel="noopener">Cycling UK · 入门骑行</a><a href="https://cyclingbc.net/wp-content/uploads/2018/03/Cycling-BC_NCCP_Lets-Ride_v.2018.pdf" target="_blank" rel="noopener">Cycling BC · 姿态与脚踏位置</a></p></details></section>
   <section><div class="section-heading"><h2>选择一次骑行</h2></div><div class="course-grid">${courses.map(course => courseCard(course)).join('')}</div></section>
   <section class="cycling-plans"><div class="section-heading"><h2>把骑行放进生活</h2></div>${CYCLING_PLANS.map(plan => `<article class="card cycling-plan"><div><h3>${plan.name}</h3><p>${plan.description}</p></div><div class="cycling-days">${Array.from({length:7},(_,day) => `<span class="${plan.sessions.some(([,offset]) => offset === day) ? 'ride-day' : ''}">${plan.sessions.some(([,offset]) => offset === day) ? icon('bike',17) : '休息'}<small>第 ${day+1} 天</small></span>`).join('')}</div><button class="button button-primary" data-action="cycling-plan" data-id="${plan.id}">${icon('calendar',17)}加入一周计划</button></article>`).join('')}</section>`;
 }
@@ -610,6 +610,7 @@ function workoutView(course, session) {
         <button class="icon-button${state.voice ? ' soft-red' : ''}" data-action="voice" aria-pressed="${state.voice}" aria-label="语音提示" title="语音提示">${icon(state.voice ? 'sound' : 'mute',18)}</button>
       </div></div>
       <ol class="motion-points">${exercise.steps.map((line,index) => `<li class="${ui.breakdown && position === index ? 'current' : ''}">${ui.breakdown ? `<button data-action="frame" data-value="${index}" aria-pressed="${position === index}"><b>${index+1}</b><span>${line}</span></button>` : `<b>${index+1}</b><span>${line}</span>`}</li>`).join('')}</ol>
+      <details id="coaching-details" class="coaching-details"><summary>呼吸与动作提示</summary><p><strong>呼吸节奏</strong><span>${exercise.breathing}</span></p><p><strong>动作调整</strong><span>${exercise.focus}</span></p>${exercise.reference ? `<a class="coaching-reference" href="${exercise.reference}" target="_blank" rel="noopener">查看动作参考 ${icon("upRight",13)}</a>` : ""}</details>
     </section>
   </div>`;
 }

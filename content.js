@@ -37,46 +37,59 @@ const COACH_NAMES = { male: '写实男教练', female: '写实女教练' };
 const MOVES = {
   rideWarm: {
     name:'骑行热身', modelMove:'cycle', cadence:65, front:['m5'], side:['m6'],
+    breathing:'均匀呼吸，保持能够轻松交谈的强度。',focus:'先检查车座、刹车与头盔，再用轻阻力进入节奏。',
     steps:['先把坐垫调到适合自己的高度，佩戴并扣好头盔。','轻阻力开始，双肩放松，双手轻握车把。','轻松踩踏，保持能说完整句子的强度。'],
   },
   rideEasy: {
     name:'坐姿平稳骑行', modelMove:'cycle', cadence:75, front:['m5'], side:['m6'],
+    breathing:'自然呼吸，肩颈放松。',focus:'前脚掌稳定对应脚踏轴心，踩到底时膝盖保留轻微弯曲。',
     steps:['目光向前，背部保持自然，肘部略微弯曲。','膝盖跟随脚尖方向，骨盆保持平稳。','平顺地踩过整圈，使用能稳定控制的阻力。'],
   },
   rideCadence: {
     name:'踏频节奏练习', modelMove:'cycle', cadence:85, front:['m5'], side:['m6'],
+    breathing:'维持能够交谈的呼吸节奏。',focus:'逐步提速，出现坐垫上弹跳或动作散乱时，回到更舒服的踏频。',
     steps:['先稳定坐姿，再小幅提高踏频。','保持轻松、可对话的强度，避免憋气。','坐垫上出现弹跳时，降低踏频并重新稳住动作。'],
   },
   rideCool: {
     name:'轻松收尾骑行', modelMove:'cycle', cadence:60, front:['m5'], side:['m6'],
+    breathing:'让呼吸随轻松踩踏逐渐平稳。',focus:'逐步降低阻力，完全停稳后再下车。',
     steps:['逐渐降低阻力和踏频，让呼吸慢慢平稳。','保持轻松踩踏，让身体平缓结束运动。','完全停稳后再下车，补充饮水。'],
   },
   march: {
     name: '原地踏步', front: ['m5'], side: ['m6'],
+    breathing:'保持自然呼吸，手臂随对侧腿轻轻摆动。',focus:'轻落地、稳住上身，抬膝幅度以容易控制为宜。',
     steps: ['抬头站直，双臂随踏步自然摆动。', '交替抬膝，脚掌轻落地。'],
   },
   squat: {
     name: '徒手深蹲', front: ['m1', 'm2', 'm1'], side: ['m3', 'm4', 'm3'],
+    reference:'https://www.mayoclinic.org/healthy-lifestyle/fitness/multimedia/squat/vid-20084663',
+    breathing:'下蹲时吸气，起身时呼气。',focus:'脚掌踩实，膝盖跟随脚尖。先选择能保持稳定的下蹲深度。',
     steps: ['双脚约与肩同宽，脚尖略向外。', '屈髋屈膝下蹲，膝盖与脚尖同向。', '脚掌踩实，平稳起身回到站姿。'],
   },
   pushup: {
     name: '俯卧撑', front: ['f3', 'f4', 'f3'], side: ['f1', 'f2', 'f1'],
+    reference:'https://www.nasm.org/resource-center/exercise-library/push-up',
+    breathing:'下放时吸气，推起时呼气。',focus:'肩、髋、脚踝保持连贯。需要降低难度时，可先练习墙面俯卧撑。',
     steps: ['双手撑地，肩、髋与脚踝保持一条线。', '屈肘控制下放，肩膀远离耳朵。', '推地回到起始位，腰背保持稳定。'],
   },
   dog: {
     name: '下犬式', side: ['f5', 'f6'],
+    breathing:'缓慢呼吸，给背部舒展的时间。',focus:'轻推地面，肩颈放松，在舒服的范围内停留。',
     steps: ['四点跪姿，双手与肩大致同宽。', '推地抬髋，让背部伸展，保持自然呼吸。'],
   },
   neck: {
     name: '颈侧舒展', front: ['f7'],
+    breathing:'缓慢呼吸，肩膀自然下沉。',focus:'轻轻侧倾，保持小幅度，平稳回到中间再换侧。',
     steps: ['自然站立，双肩放松。', '头轻轻侧倾，保持呼吸，再换另一侧。'],
   },
   shoulder: {
     name: '肩背伸展', side: ['f8'],
+    breathing:'均匀呼吸，呼气时轻轻向前伸展。',focus:'双肩远离耳朵，放慢伸展与回收的动作。',
     steps: ['双手交握向前推，松开双肩。', '在舒适范围内伸展上背，保持缓慢呼吸。'],
   },
   shot: {
     name: '投篮起手', front: ['m7'], side: ['m8'],
+    breathing:'准备时自然吸气，伸展起手时缓缓呼气。',focus:'下肢先稳住重心，托球手肘朝向目标，保持持球稳定。',
     steps: ['屈膝稳住重心，双手在胸前持球。', '托球手肘放在球下方，目光看向篮筐。'],
   },
 };
