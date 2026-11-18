@@ -123,8 +123,14 @@ function restoreSessions(data) {
   for (const [key, session] of Object.entries(data.sessions || {})) {
     if (!session?.id || finished.has(session.id)) continue;
     // Older checkpoints used the course ID as the storage key.
-    const course = courseById(session.course || key);
-    if (!course || !Number.isInteger(session.step) || !course.exercises[session.step]) continue;
+    const courseId = session.course || key;
+    const course = courseById(courseId);
+    if (!course) {
+      // Keep checkpoints for courses introduced after this archived version.
+      sessions[session.id] = { ...session, course:courseId };
+      continue;
+    }
+    if (!Number.isInteger(session.step) || !course.exercises[session.step]) continue;
     const plan = data.plans.find(entry => entry.id === session.plan && entry.course === course.id && !entry.done);
     sessions[session.id] = { ...session, course:course.id, plan:plan?.id || '', touched:session.touched || 0 };
   }
@@ -163,7 +169,7 @@ function pendingPlan(courseId, planId) {
 }
 
 function recentSessions(courseId = '') {
-  return Object.values(state.sessions).filter(session => !courseId || session.course === courseId)
+  return Object.values(state.sessions).filter(session => courseById(session.course) && (!courseId || session.course === courseId))
     .sort((a,b) => b.touched-a.touched);
 }
 

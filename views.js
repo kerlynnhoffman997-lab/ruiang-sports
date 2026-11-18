@@ -236,7 +236,7 @@ function planView() {
   const day = today();
   const end = days[6];
   const weekRange = monthDay(start)+'–'+(dateAt(start).getMonth() === dateAt(end).getMonth() ? dateAt(end).getDate()+'日' : monthDay(end));
-  const weekPlans = state.plans.filter(plan => plan.date >= start && plan.date <= end);
+  const weekPlans = state.plans.filter(plan => plan.date >= start && plan.date <= end && courseById(plan.course));
   return `${pageHead(days.includes(day) ? '本周计划' : '运动计划',{
     action:`<button class="button button-primary" data-action="plan-add">${icon('plus',18)}新建计划</button>`,
   })}
@@ -491,6 +491,17 @@ function emptyState(art,title,copy,page,action) {
   return `<section class="empty-state card">${img(art)}<div><h2>${title}</h2><p>${copy}</p><a class="button button-primary" href="#${page}">${action} ${icon('arrow',17)}</a></div></section>`;
 }
 
+function recordedCourse(courseId) {
+  const course = courseById(courseId);
+  if (course) return course;
+  const cyclingNames = new Map([
+    ['ride-start','骑行入门 · 找到节奏'],
+    ['ride-rhythm','骑行进阶 · 平顺踩踏'],
+    ['ride-endurance','轻松有氧 · 骑行耐力'],
+  ]);
+  return {name:cyclingNames.get(courseId) || '训练记录',icon:'activity',color:'mint'};
+}
+
 function recordsView() {
   const history = [...state.history].reverse();
   const minutes = Math.round(history.reduce((sum,log) => sum+log.seconds,0)/60);
@@ -502,7 +513,7 @@ function recordsView() {
         <div class="card">${namedIcon('flame','peach')}<span>最长连续打卡</span><strong>${longestStreak()}<small> 天</small></strong></div>
       </div>
       <div class="card record-list">${history.map(log => {
-        const course = courseById(log.course);
+        const course = recordedCourse(log.course);
         return `<a class="record-row" href="#result/${log.id}">${namedIcon(course.icon,course.color)}<span><strong>${course.name}</strong><small>${friendlyDate(log.date)} · ${formatDuration(log.seconds)}</small></span>${icon('chevron',18)}</a>`;
       }).join('')}</div>`}`;
 }
@@ -583,7 +594,7 @@ function workoutView(course, session) {
 }
 
 function resultView(log) {
-  const course = courseById(log.course);
+  const course = recordedCourse(log.course);
   return `${pageHead('训练结果',{back:'train'})}
   <section class="result-card card">
     <div class="result-hero"><div><span class="hero-kicker">${icon('spark',16)}${course.name}</span>

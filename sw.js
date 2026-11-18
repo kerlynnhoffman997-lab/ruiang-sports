@@ -1,6 +1,6 @@
 const scope = new URL(self.registration.scope);
 const cachePrefix = 'ruiang-mobile:'+scope.href+':';
-const cacheName = cachePrefix+'v2';
+const cacheName = cachePrefix+'v5';
 const outfitNames = ['sport','running','badminton','basketball','football','yoga','tang','hanfu','casual','festive'];
 const propNames = ['coin','fruit','bottle','bell','headband','wristband','ribbon','gift'];
 const images = [
@@ -19,9 +19,11 @@ const indexUrl = new URL('index.html',scope);
 
 self.addEventListener('install',event => {
   // Install a complete version before serving any of its files.
-  event.waitUntil(caches.open(cacheName).then(cache =>
-    cache.addAll([...appUrls].map(url => new Request(url,{cache:'reload'})))
-  ));
+  event.waitUntil((async () => {
+    const cache = await caches.open(cacheName);
+    await cache.addAll([...appUrls].map(url => new Request(url,{cache:'reload'})));
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate',event => {
