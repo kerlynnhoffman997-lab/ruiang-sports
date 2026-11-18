@@ -13,7 +13,7 @@ function navLink([id, label, symbol]) {
 function shell(main) {
   const tab = PRIMARY_NAV.findIndex(([id]) => id === tabFor(route.page));
   const training = route.page === 'workout';
-  return `<main id="main" tabindex="-1" class="main-content${training ? ' training-content' : ''}">${main}</main>
+  return `<main id="main" tabindex="-1" class="main-content${training ? ' training-content' : ''}" data-page="${route.page}">${main}</main>
   ${training ? '' : `<nav class="mobile-nav" aria-label="主导航" style="--slots:${PRIMARY_NAV.length};--slot:${tab}">
     <span class="selection-indicator" data-indicator="navigation" data-index="${tab}" aria-hidden="true"></span>
     ${PRIMARY_NAV.map(navLink).join('')}
@@ -98,12 +98,8 @@ function equippedAccessory() {
 function hero() {
   const outfit = outfitById(state.outfit);
   return `<section class="hero">
-    <div class="hero-track" aria-hidden="true"><i></i><i></i><i></i></div>
-    <div class="hero-spark one" aria-hidden="true">${icon('spark',26)}</div>
-    <div class="hero-spark two" aria-hidden="true">${icon('spark',17)}</div>
-    <div class="hero-spark three" aria-hidden="true">${icon('spark',14)}</div>
     <div class="hero-copy">
-      <span class="hero-kicker">${icon('spark',15)}醒狮少年</span>
+      <span class="hero-kicker">醒狮少年</span>
       <h2>我的瑞昂</h2>
       <p id="hero-dialogue" class="speech">今天也要一起运动哦！</p>
       ${equippedAccessory()}
@@ -318,29 +314,37 @@ function agendaRow(plan, day) {
   </li>`;
 }
 
-const PROFILE_LINKS = [
-  ['bag','我的装备','box','blue'], ['badges','成就勋章','award','gold'],
-  ['records','运动记录','activity','rose'], ['goal','目标设置','target','mint'],
-  ['notifications','消息通知','bell','gold'], ['settings','设置','gear','lilac'],
+const PROFILE_GROUPS = [
+  { label: '装备与运动', links: [
+    ['bag','我的装备','box','blue'], ['badges','成就勋章','award','gold'], ['records','运动记录','activity','rose'],
+  ]},
+  { label: '偏好与通知', links: [
+    ['goal','目标设置','target','mint','sheet'], ['notifications','消息通知','bell','gold','sheet'], ['settings','设置','gear','lilac'],
+  ]},
 ];
 
 function meView() {
+  const { level, stage } = levelInfo();
   return `${pageHead('我的',{action:coinPill()})}
-  <div class="detail-grid">
-      <section class="card profile-card">
-        <div class="profile-header">${img('ruiang-face.png','瑞昂头像','profile-avatar')}
-          <div><h2>${esc(state.name)}</h2>
-            <a class="profile-growth" href="#growth" aria-label="查看成长阶段"><span class="level-pill">Lv.${levelInfo().level}</span> ${levelInfo().stage.name} ${icon('chevron',15)}</a>
-          </div>
+  <div class="profile-layout">
+    <section class="card profile-card" aria-label="个人资料">
+      <div class="profile-header">${img('ruiang-face.png','瑞昂头像','profile-avatar')}
+        <div><h2>${esc(state.name)}</h2>
+          <a class="profile-growth" href="#growth" aria-label="查看成长阶段"><span class="level-pill">Lv.${level}</span> ${stage.name} ${icon('chevron',14)}</a>
         </div>
-        <div class="profile-stats"><div><b>${state.history.length}</b><span>累计训练</span></div><div><b>${currentStreak()}</b><span>连续打卡</span></div><div><b>${state.badges.length}</b><span>解锁勋章</span></div></div>
-      </section>
-    <section class="card profile-menu" aria-label="个人功能">
-      ${PROFILE_LINKS.map(([id,label,symbol,color]) => {
-        const sheet = ['goal','notifications'].includes(id);
-        return `<${sheet ? 'button type="button" data-action="'+id+'"' : 'a href="#'+id+'"'} class="profile-link">${namedIcon(symbol,color)}<strong>${label}</strong>${icon('chevron',18)}</${sheet ? 'button' : 'a'}>`;
-      }).join('')}
+      </div>
+      <div class="profile-stats"><div><b>${state.history.length}</b><span>累计训练</span></div><div><b>${currentStreak()}</b><span>连续打卡</span></div><div><b>${state.badges.length}</b><span>解锁勋章</span></div></div>
     </section>
+    <div class="profile-menus">
+      ${PROFILE_GROUPS.map(({label, links}) => `<section class="card profile-menu" aria-label="${label}">
+        ${links.map(([id,name,symbol,color,kind]) => {
+          const content = `${namedIcon(symbol,color,18)}<strong>${name}</strong>${icon('chevron',16)}`;
+          return kind === 'sheet'
+            ? `<button type="button" class="profile-link" data-action="${id}">${content}</button>`
+            : `<a class="profile-link" href="#${id}">${content}</a>`;
+        }).join('')}
+      </section>`).join('')}
+    </div>
   </div>`;
 }
 
