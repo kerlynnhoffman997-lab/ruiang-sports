@@ -197,7 +197,16 @@ function cyclingView() {
     ['循序渐进','热身后再增加强度，最后用轻松踩踏收尾。全程保持自然呼吸。'],
   ];
   return `${pageHead('一起去骑行',{back:'train',action:coinPill()})}
-  <section class="card cycling-technique"><div class="section-heading"><h2>骑行动作规范</h2></div><ol>${cues.map(([title,text],index) => `<li><b>${index+1}</b><div><h3>${title}</h3><p>${text}</p></div></li>`).join('')}</ol><p class="cycling-safety">适合健身车或安全封闭场地。户外骑行时，请先停稳再操作屏幕。</p><details class="cycling-sources"><summary>查看动作参考</summary><p><a href="https://www.britishcycling.org.uk/knowledge/skills/get-started/article/izn20180118-Get-Started-How-to-climb---10-top-tips-for-beginners-0" target="_blank" rel="noopener">British Cycling · 姿态与踩踏</a><a href="https://www.cyclinguk.org/article/campaigns-guide/cycling-tips-24-essential-pieces-riding-advice-beginners" target="_blank" rel="noopener">Cycling UK · 入门骑行</a><a href="https://cyclingbc.net/wp-content/uploads/2018/03/Cycling-BC_NCCP_Lets-Ride_v.2018.pdf" target="_blank" rel="noopener">Cycling BC · 姿态与脚踏位置</a></p></details></section>
+  <section class="card cycling-technique">
+    <div class="section-heading"><h2>骑行动作规范</h2></div>
+    <figure class="cycling-rider">
+      ${img('ruiang-bike.png','瑞昂戴着醒狮头套骑自行车')}
+      <figcaption>瑞昂骑行</figcaption>
+    </figure>
+    <ol>${cues.map(([title,text],index) => `<li><b>${index+1}</b><div><h3>${title}</h3><p>${text}</p></div></li>`).join('')}</ol>
+    <p class="cycling-safety">适合健身车或安全封闭场地。户外骑行时，请先停稳再操作屏幕。</p>
+    <details class="cycling-sources"><summary>查看动作参考</summary><p><a href="https://www.britishcycling.org.uk/knowledge/skills/get-started/article/izn20180118-Get-Started-How-to-climb---10-top-tips-for-beginners-0" target="_blank" rel="noopener">British Cycling · 姿态与踩踏</a><a href="https://www.cyclinguk.org/article/campaigns-guide/cycling-tips-24-essential-pieces-riding-advice-beginners" target="_blank" rel="noopener">Cycling UK · 入门骑行</a><a href="https://cyclingbc.net/wp-content/uploads/2018/03/Cycling-BC_NCCP_Lets-Ride_v.2018.pdf" target="_blank" rel="noopener">Cycling BC · 姿态与脚踏位置</a></p></details>
+  </section>
   <section><div class="section-heading"><h2>选择一次骑行</h2></div><div class="course-grid">${courses.map(course => courseCard(course)).join('')}</div></section>
   <section class="cycling-plans"><div class="section-heading"><h2>把骑行放进生活</h2></div>${CYCLING_PLANS.map(plan => `<article class="card cycling-plan"><div><h3>${plan.name}</h3><p>${plan.description}</p></div><div class="cycling-days">${Array.from({length:7},(_,day) => `<span class="${plan.sessions.some(([,offset]) => offset === day) ? 'ride-day' : ''}">${plan.sessions.some(([,offset]) => offset === day) ? icon('bike',17) : '休息'}<small>第 ${day+1} 天</small></span>`).join('')}</div><button class="button button-primary" data-action="cycling-plan" data-id="${plan.id}">${icon('calendar',17)}加入一周计划</button></article>`).join('')}</section>`;
 }

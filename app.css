@@ -680,6 +680,9 @@ body:has(.training-content) #toast { bottom:calc(15px + env(safe-area-inset-bott
 .coaching-reference { display:flex; align-items:center; gap:5px; width:max-content; min-height:36px; font-size:11px; color:#806345; }
 .cycling-technique { padding:15px 14px; }
 .cycling-technique .section-heading { margin-bottom:13px; }
+.cycling-rider { margin:0 0 15px; padding:8px 8px 7px; border:1px solid #efe9df; border-radius:12px; background:#faf7ef; }
+.cycling-rider img { width:100%; height:clamp(164px,56vw,212px); object-fit:contain; }
+.cycling-rider figcaption { margin-top:4px; color:var(--muted); font-size:11px; line-height:1.5; text-align:center; }
 .cycling-technique ol { display:grid; gap:16px; }
 .cycling-technique li { display:flex; align-items:flex-start; gap:10px; }
 .cycling-technique li > b { display:grid; place-items:center; flex:none; width:25px; height:25px; border-radius:8px; color:#437d64; background:#e8f2e9; font-size:11px; }
