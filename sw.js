@@ -1,11 +1,11 @@
 const scope = new URL(self.registration.scope);
 const cachePrefix = 'ruiang-mobile:'+scope.href+':';
-const cacheName = cachePrefix+'v6';
+const cacheName = cachePrefix+'v7-local-2d';
 const outfitNames = ['sport','running','badminton','basketball','football','yoga','tang','hanfu','casual','festive'];
 const propNames = ['coin','fruit','bottle','bell','headband','wristband','ribbon','gift'];
 const images = [
   'app-icon.png','app-icon-192.png','app-icon-512.png','app-icon-maskable.png','wordmark.png','plan-cover.jpg',
-  'ruiang-box.png','ruiang-celebrate.png','ruiang-face.png','ruiang-rest.png','ruiang-shop.png',
+  'ruiang-box.png','ruiang-celebrate.png','ruiang-face.png','ruiang-rest.png','ruiang-shop.png','growth-stages.jpg',
   ...outfitNames.flatMap(name => [0,1,2].map(view => name+'-'+view+'.png')),
   ...propNames.map(name => 'prop-'+name+'.jpg'),
   ...['m','f'].flatMap(coach => Array.from({length:8},(_,index) => 'coach-'+coach+(index+1)+'.jpg')),
@@ -44,6 +44,7 @@ self.addEventListener('fetch',event => {
   if (!appEntry && !appUrls.has(url.href)) return;
   event.respondWith((async () => {
     const cache = await caches.open(cacheName);
-    return await cache.match(appEntry ? indexUrl.href : request) || fetch(request);
+    const response = await cache.match(appEntry ? indexUrl.href : request);
+    return response || fetch(request);
   })());
 });

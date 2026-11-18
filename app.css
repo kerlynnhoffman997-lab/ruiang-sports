@@ -8,6 +8,8 @@
   --dock-gap:max(10px,env(safe-area-inset-bottom)); --dock-space:calc(66px + var(--dock-gap));
   --font:"DM Sans","PingFang SC","Microsoft YaHei UI","Microsoft YaHei",sans-serif;
 }
+
+
 * { box-sizing:border-box; }
 html { min-height:100%; background:#ece7e1; scroll-padding-block-end:var(--dock-space); }
 body { margin:0; color:var(--ink); font:14px/1.5 var(--font); -webkit-font-smoothing:antialiased; }
@@ -131,8 +133,7 @@ a.coin-pill:hover { background:#fff1d0; }
 .hero-spark.three { bottom:25%; right:7%; color:#e5ab77; }
 .hero-illustration { position:absolute; z-index:2; inset:12px 1% 35px 46%; }
 .stage-shadow { position:absolute; height:17px; width:54%; max-width:160px; bottom:2%; left:50%; translate:-50% 0; border-radius:50%; background:#7d3827; opacity:.16; filter:blur(6px); pointer-events:none; }
-.sprite { position:absolute; z-index:1; inset:0; width:100%; height:100%; touch-action:pan-y; user-select:none; border-radius:17px; }
-.sprite { cursor:grab; }
+.sprite { position:absolute; z-index:1; inset:0; width:100%; height:100%; touch-action:pan-y; user-select:none; border-radius:17px; cursor:grab; }
 .sprite.dragging { cursor:grabbing; }
 .sprite-mover { position:absolute; inset:0; }
 .sprite-image { position:absolute; inset:0; height:100%; width:100%; object-fit:contain; object-position:center bottom; filter:drop-shadow(0 9px 8px #743c2917); transform:scaleX(var(--sprite-x,1)); transition:transform .14s; }
@@ -202,6 +203,7 @@ a.coin-pill:hover { background:#fff1d0; }
 .compact-course { min-height:82px; grid-template-columns:80px minmax(0,1fr) 36px; gap:9px; }
 .course-cover { height:82px; border-radius:12px; overflow:hidden; background:#d5cbc1; }
 .course-cover img { width:100%; height:100%; object-fit:contain; }
+.course-cover-icon { display:grid; place-items:center; background:var(--tint); color:var(--tone); }
 .compact-course .course-cover { height:64px; }
 .course-card-copy { min-width:0; }
 .course-tags { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:4px; font-size:11px; color:var(--muted); }
@@ -520,6 +522,7 @@ a.coin-pill:hover { background:#fff1d0; }
 .rest-actions { display:flex; justify-content:center; flex-wrap:wrap; gap:8px; }
 .result-card { overflow:hidden; max-width:740px; margin:0 auto; }
 .result-hero { display:flex; align-items:center; justify-content:space-between; gap:7px; padding:18px clamp(14px,3vw,28px); background:radial-gradient(ellipse at 76% 60%,#ffefd4,#fbe0cd 69%); min-height:210px; }
+.cycling-result-hero { min-height:0; }
 .result-hero > div { z-index:1; }
 .result-hero h2 { font-size:34px; letter-spacing:-.06em; margin:9px 0 6px; white-space:nowrap; }
 .result-hero p { color:#774b3e; font-size:13px; }
@@ -631,3 +634,80 @@ body:has(.training-content) #toast { bottom:calc(15px + env(safe-area-inset-bott
 @media (prefers-reduced-transparency:reduce) {
   .mobile-nav { backdrop-filter:none; background:#fffdfa; }
 }
+
+/* Training rewards, growth and cycling plans. */
+.cycling-entry,.training-wallet { display:flex; align-items:center; gap:10px; padding:12px; margin-top:10px; width:100%; text-align:left; }
+.cycling-entry { background:#f1f7f1; border-color:#e1eadd; }
+.cycling-entry > span:nth-child(2),.training-wallet > span:nth-child(2) { display:grid; flex:1; gap:3px; min-width:0; }
+.cycling-entry strong,.training-wallet strong { font-size:13px; }
+.cycling-entry small,.training-wallet small { font-size:11px; color:var(--muted); }
+.training-wallet { margin-top:0; margin-bottom:9px; background:#fff9ed; border-color:#f0e4c8; }
+.course-reward { display:flex; gap:6px; align-items:center; margin-top:13px; padding:9px 11px; border-radius:10px; background:#fff3d9; color:#8a5b20; font-size:11px; min-height:44px; width:100%; text-align:left; }
+.course-reward > svg:last-child { margin-left:auto; }
+.training-earnings { display:flex; justify-content:space-between; align-items:center; gap:7px; padding:6px 0 9px; font-size:11px; }
+.training-earnings > span { display:flex; align-items:center; gap:4px; color:#856229; }
+.training-earnings b { font-size:14px; font-variant-numeric:tabular-nums; }
+.training-earnings > button { display:flex; align-items:center; gap:4px; min-height:35px; color:var(--muted); }
+.coach-stage .coach-label { pointer-events:none; background:#fffdf1e8; font-size:10px; }
+.cycling-cadence { display:flex; align-items:center; gap:6px; margin-top:7px; color:#416c5d; font-size:12px; font-weight:650; }
+.cycling-workout-tools { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+.cycling-workout-tools .tool-button,.cycling-workout-tools .camera-tile { min-height:44px; border:1px solid var(--line); padding-inline:10px; }
+.cycling-workout-tools .tool-button,.cycling-workout-tools .camera-tile > span { display:flex; align-items:center; justify-content:center; gap:5px; }
+.cycling-workout-tools .camera-tile { position:relative; inset:auto; width:auto; height:auto; }
+.cycling-workout-tools .camera-tile.camera-live { width:124px; height:94px; }
+.result-reward-note { margin:-3px 0 13px; color:#796542; font-size:11px; }
+.reward-explainer { display:grid; justify-items:start; gap:16px; padding:12px 1px 5px; }
+.reward-explainer h3 { font-size:21px; }
+.reward-explainer p { font-size:13px; color:var(--muted); line-height:1.8; }
+.reward-explainer .button { width:100%; }
+.earned-total { display:flex; width:100%; align-items:center; justify-content:space-between; gap:10px; padding:13px; background:#fff6e4; border-radius:12px; font-size:12px; }
+.earned-total strong { color:#82571b; }
+.stage-portrait { display:block; background-image:url('assets/growth-stages.jpg'); background-repeat:no-repeat; background-size:500% 100%; background-position:calc(var(--portrait)*25%) center; }
+.stage-steps .stage-medallion { width:44px; height:94px; overflow:hidden; border:0; border-radius:12px; background:#fcf2e5; box-shadow:none; }
+.stage-medallion .stage-portrait { width:100%; height:100%; }
+.stage-steps .stage-track { top:auto; bottom:24px; opacity:.40; }
+.growth-preview { min-height:270px; }
+.growth-art .growth-portrait { width:47%; height:calc(100% - 14px); bottom:7px; left:54%; filter:none; }
+.growth-description { margin:10px 0 12px; max-width:160px; color:#7e6453; font-size:11px; line-height:1.7; }
+.growth-copy h2 { font-size:30px; }
+.coaching-details { margin-top:12px; border-top:1px solid var(--line); font-size:12px; }
+.coaching-details summary { display:flex; align-items:center; min-height:44px; cursor:pointer; color:#806345; font-weight:700; }
+.coaching-details summary::after { content:'＋'; margin-left:auto; font-size:17px; font-weight:500; }
+.coaching-details[open] summary::after { content:'−'; }
+.coaching-details p { display:grid; gap:5px; margin-bottom:12px; line-height:1.7; }
+.coaching-details strong { font-size:11px; color:#6c7665; }
+.coaching-details span { color:var(--muted); }
+.coaching-reference { display:flex; align-items:center; gap:5px; width:max-content; min-height:36px; font-size:11px; color:#806345; }
+.cycling-technique { padding:15px 14px; }
+.cycling-technique .section-heading { margin-bottom:13px; }
+.cycling-technique ol { display:grid; gap:16px; }
+.cycling-technique li { display:flex; align-items:flex-start; gap:10px; }
+.cycling-technique li > b { display:grid; place-items:center; flex:none; width:25px; height:25px; border-radius:8px; color:#437d64; background:#e8f2e9; font-size:11px; }
+.cycling-technique h3 { font-size:13px; margin-top:3px; }
+.cycling-technique li p { color:var(--muted); font-size:12px; line-height:1.75; margin-top:5px; }
+.cycling-safety { margin-top:17px; padding-top:12px; border-top:1px solid var(--line); font-size:11px; color:#7a6b58; line-height:1.7; }
+.cycling-sources { margin-top:10px; font-size:11px; color:var(--muted); }
+.cycling-sources summary { cursor:pointer; min-height:30px; padding-top:4px; }
+.cycling-sources p { display:grid; gap:6px; padding-bottom:7px; }
+.cycling-sources a { text-decoration:underline; text-underline-offset:3px; }
+.cycling-plans { margin-top:14px; }
+.cycling-plan { padding:15px; margin-bottom:10px; }
+.cycling-plan h3 { font-size:16px; }
+.cycling-plan p { margin-top:7px; font-size:12px; color:var(--muted); }
+.cycling-days { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; margin:18px 0; }
+.cycling-days > span { display:flex; gap:7px; align-items:center; flex-direction:column; justify-content:center; padding:8px 2px; background:#f7f5f2; border-radius:10px; font-size:10px; color:var(--quiet); }
+.cycling-days > .ride-day { background:#e8f2e9; color:#477963; }
+.cycling-days small { font-size:9px; white-space:nowrap; }
+.cycling-plan > .button { width:100%; }
+.cycling-plan-preview { display:grid; gap:8px; }
+.cycling-plan-preview li { display:grid; grid-template-columns:54px 1fr; gap:3px; padding:12px; border:1px solid var(--line); border-radius:12px; }
+.cycling-plan-preview li > span { grid-row:span 2; color:#4c8167; font-size:12px; }
+.cycling-plan-preview strong { font-size:12px; }
+.cycling-plan-preview small { color:var(--muted); font-size:11px; }
+@media (max-width:360px) {
+  .growth-copy h2 { font-size:26px; }
+}
+@media (prefers-reduced-motion:no-preference) {
+  .home-sprite .sprite-mover { animation:companion-breathe 3.5s ease-in-out infinite; transform-origin:center bottom; }
+}
+@keyframes companion-breathe { 0%,100% { transform:translateY(0) scale(1); } 50% { transform:translateY(-2px) scale(1.007); } }
